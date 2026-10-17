@@ -27,13 +27,17 @@
     }
     #joy-zone { width: clamp(7.1rem, 30vw, 10rem); height: clamp(7.1rem, 30vw, 10rem); flex-shrink: 0; }
     #joy-knob { width: clamp(3rem, 12vw, 4rem); height: clamp(3rem, 12vw, 4rem); }
-    #btn-jump { width: clamp(5rem, 21vw, 6rem); height: clamp(2.9rem, 9vh, 3.25rem); }
     #btn-dive { width: clamp(4.25rem, 20vw, 5rem); height: clamp(4.25rem, 20vw, 5rem); }
     #btn-spin { width: clamp(5rem, 23vw, 6rem); height: clamp(5rem, 23vw, 6rem); }
-    #joy-zone, #btn-jump, #btn-dive, #btn-spin { touch-action: none; }
+    #joy-zone, #btn-dive, #btn-spin { touch-action: none; }
     .remote-controller #top-bar { display: none; }
     .remote-controller #controller-section { height: 100%; border: 0; }
-    #mini-map { display: block; width: clamp(5.8rem, 34%, 7rem); flex: 0 0 clamp(5.8rem, 34%, 7rem); max-width: 44%; height: auto; aspect-ratio: 16 / 10; }
+    #follow-camera-panel { position: relative; width: 100%; flex: 0 0 auto; overflow: hidden; }
+    #follow-camera { position: relative; width: 100%; height: clamp(138px, 22vh, 205px); overflow: hidden; background: #090d27; border-radius: .65rem; }
+    #follow-camera canvas { display: block; width: 100%; height: 100%; }
+    #follow-camera-label { position: absolute; left: .5rem; top: .4rem; z-index: 2; padding: .18rem .4rem; border-radius: .35rem; background: rgba(8,12,38,.72); font-size: 10px; font-weight: 900; color: #67e8f9; pointer-events: none; }
+    #ctrl-player-count { position: absolute; left: .5rem; bottom: .35rem; z-index: 2; padding: .18rem .4rem; border-radius: .35rem; background: rgba(8,12,38,.72); font-size: 10px; font-weight: 900; color: #fde047; pointer-events: none; }
+    #mini-map { position: absolute; right: .35rem; top: .35rem; z-index: 2; display: block; width: clamp(5rem, 23%, 7rem); max-width: 42%; height: auto; aspect-ratio: 16 / 10; border: 1px solid rgba(255,255,255,.3); border-radius: .35rem; opacity: .94; }
     @media (max-width: 520px) {
       #top-bar > div:first-child { flex: 1 1 100%; }
       #top-bar > div:last-child { flex: 1 1 100%; justify-content: space-between; }
@@ -43,14 +47,13 @@
       #controller-section { padding: .5rem; gap: .35rem; }
       #controller-section .space-y-2 { row-gap: .35rem; }
       #ctrl-name-input { width: 5.5rem; }
-      #mini-map-panel { padding: .3rem .45rem; }
-      #mini-map { max-height: 74px; }
+      #follow-camera { height: clamp(125px, 19vh, 170px); }
+      #mini-map { width: 5.2rem; }
       #controller-section .reaction-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .25rem; }
       #controller-section .reaction-grid button { padding: .35rem .1rem; font-size: 10px; min-width: 0; }
     }
     @media (max-width: 360px) {
       #joy-zone { width: 7rem; height: 7rem; }
-      #btn-jump { width: 4.7rem; }
       #btn-dive { width: 4rem; height: 4rem; }
       #btn-spin { width: 4.7rem; height: 4.7rem; }
       #controller-section .central-controls { gap: .3rem; }
@@ -58,10 +61,10 @@
     @media (max-height: 520px) and (orientation: landscape) {
       #controller-section { padding: .3rem .55rem; }
       #controller-section .player-overview { padding: .3rem .5rem; }
-      #mini-map-panel, #reaction-panel { display: none; }
+      #follow-camera { height: 102px; }
+      #reaction-panel { display: none; }
       #joy-zone { width: 6.2rem; height: 6.2rem; }
       #joy-knob { width: 2.7rem; height: 2.7rem; }
-      #btn-jump { width: 4.5rem; height: 2.5rem; }
       #btn-dive { width: 3.8rem; height: 3.8rem; }
       #btn-spin { width: 4.5rem; height: 4.5rem; }
     }
@@ -182,7 +185,7 @@
 
           <div class="grid grid-cols-2 gap-1.5">
             <button onclick="triggerArenaEvent()" class="arcade-btn bg-pink-500 hover:bg-pink-400 text-white font-black py-1.5 rounded-xl text-xs">
-              ⚡ ギミック発動
+              🍬 ボーナス出現
             </button>
             <button onclick="resetMatch()" class="arcade-btn bg-indigo-800 hover:bg-indigo-700 text-indigo-100 font-bold py-1.5 rounded-xl text-xs">
               🔄 リセット
@@ -200,19 +203,19 @@
         <div class="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center pointer-events-none w-full max-w-xl px-4">
           <div class="pop-panel px-6 py-2 flex items-center gap-5 border-2 border-yellow-400/60">
             <div class="text-center">
-              <div class="text-[10px] text-pink-300 font-black">NEXT GIMMICK</div>
-              <div id="event-timer" class="font-arcade text-2xl font-black text-yellow-300">00:20</div>
+              <div class="text-[10px] text-pink-300 font-black">NEXT CANDY BONUS</div>
+              <div id="event-timer" class="font-arcade text-xl font-black text-yellow-300">00:20</div>
             </div>
             <div class="h-8 w-0.5 bg-white/20"></div>
             <div class="text-left">
               <div class="text-[10px] text-cyan-300 font-black">STAGE MISSION</div>
-              <div id="stage-status" class="text-sm md:text-base font-black text-white">👑 中央の「王冠」を奪い合え！</div>
+              <div id="stage-status" class="text-sm md:text-base font-black text-white">👑 王冠を奪い合え！場外に注意！</div>
             </div>
           </div>
 
           <!-- ド派手なイベントバナー -->
           <div id="big-alert" class="hidden mt-3 bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 text-white font-black px-7 py-2.5 rounded-2xl shadow-[0_6px_0_#000] border-4 border-white text-lg md:text-xl tracking-wider animate-bounce">
-            ⚠️ 回転ハンマーバー出現！！ジャンプでかわすんだ！
+            🍬 キャンディボーナス出現！拾ってスコアを稼げ！
           </div>
         </div>
 
@@ -258,18 +261,15 @@
         </div>
       </div>
 
-      <!-- スマホだけで位置がわかるミニステージレーダー -->
-      <div id="mini-map-panel" class="bg-indigo-900/65 border border-cyan-300/30 rounded-xl px-2 py-1.5 flex items-center gap-2 shrink-0">
+      <!-- スマホ用・自分を追尾する軽量3Dカメラ -->
+      <div id="follow-camera-panel" class="bg-indigo-950 border border-cyan-300/40 rounded-xl p-1.5 shrink-0 shadow-lg">
+        <div id="follow-camera" aria-label="自分のキャラクターを追尾する3Dカメラ"></div>
+        <div id="follow-camera-label">3D FOLLOW CAM</div>
+        <div id="ctrl-player-count">参加者を同期中…</div>
         <canvas id="mini-map" width="160" height="100" aria-label="プレイヤー位置ミニマップ"></canvas>
-        <div class="min-w-0 text-[10px] leading-snug text-indigo-100">
-          <div class="font-black text-cyan-200 text-xs">ミニステージ</div>
-          <div>白い枠があなた</div>
-          <div id="ctrl-player-count" class="font-black text-yellow-300 mt-1">参加者を同期中…</div>
-          <div class="text-indigo-300">位置は自動で同期</div>
-        </div>
       </div>
 
-      <!-- 中央：アナログスティック ＆ 3大アクションボタン -->
+      <!-- 中央：アナログスティック ＆ アクションボタン -->
       <div class="central-controls flex-1 flex items-center justify-around py-2 gap-2 relative">
         <!-- 左：バーチャルアナログスティック -->
         <div class="flex flex-col items-center">
@@ -284,11 +284,6 @@
 
         <!-- 右：ゲーセン風でかボタン3つ -->
         <div class="flex flex-col gap-2.5 items-center">
-          <button id="btn-jump"
-            class="arcade-btn w-24 h-12 rounded-2xl bg-gradient-to-b from-emerald-400 to-emerald-600 border-2 border-white flex items-center justify-center gap-1 shadow-lg">
-            <span class="text-xs font-black text-slate-950">ジャンプ</span>
-          </button>
-
           <div class="flex gap-2.5">
             <button id="btn-dive"
               class="arcade-btn w-20 h-20 rounded-full bg-gradient-to-b from-cyan-300 to-blue-600 border-4 border-white flex flex-col items-center justify-center shadow-lg">
@@ -324,6 +319,7 @@
     // ============================================================================
     let audioCtx = null;
     let soundEnabled = true;
+    let lastSoundAt = 0;
 
     function initAudio() {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -342,6 +338,10 @@
 
     function playSound(type) {
       if (!soundEnabled) return;
+      const stamp = performance.now();
+      const minGap = type === 'boing' ? 95 : 28;
+      if (stamp - lastSoundAt < minGap) return;
+      lastSoundAt = stamp;
       try {
         initAudio();
         const now = audioCtx.currentTime;
@@ -358,13 +358,6 @@
           gain.gain.setValueAtTime(0.18, now);
           gain.gain.linearRampToValueAtTime(0.01, now + 0.18);
           osc.start(now); osc.stop(now + 0.18);
-        } else if (type === 'jump') {
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(260, now);
-          osc.frequency.exponentialRampToValueAtTime(680, now + 0.16);
-          gain.gain.setValueAtTime(0.18, now);
-          gain.gain.linearRampToValueAtTime(0.01, now + 0.16);
-          osc.start(now); osc.stop(now + 0.16);
         } else if (type === 'dive') {
           osc.type = 'sawtooth';
           osc.frequency.setValueAtTime(500, now);
@@ -424,47 +417,43 @@
     // ============================================================================
     let scene, camera, renderer, gltfLoader;
     let stageRadius = 34;
-    let platformGroup, sweeperBarGroup, crownMesh;
+    let platformGroup, crownMesh;
     let customBlenderModelTemplate = null;
 
     const players = {};
     const candies = [];
     let crownState = { holderId: null, x: 0, z: 0, angle: 0 };
-    let sweeperState = { active: false, angle: 0, speed: 0.032 };
     let eventCountdown = 20;
 
     function initThreeStage() {
-      const container = document.getElementById('three-container');
-      const w = container.clientWidth || 800;
-      const h = container.clientHeight || 600;
+      const remoteView = !!roomParam;
+      const container = document.getElementById(remoteView ? 'follow-camera' : 'three-container');
+      const w = Math.max(1, container.clientWidth || 800);
+      const h = Math.max(1, container.clientHeight || (remoteView ? 160 : 600));
 
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0x1a103c);
+      if (!remoteView) scene.fog = new THREE.FogExp2(0x1a103c, 0.008);
 
-      // スマホのリモートコントローラーでは3D描画を起動せず、CPU/GPU負荷を最小化する。
-      // 受信状態のプレイヤー位置は2Dミニマップだけに反映する。
-      if (roomParam) {
-        camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 300);
-        return;
-      }
+      camera = new THREE.PerspectiveCamera(remoteView ? 58 : 45, w / h, 0.1, remoteView ? 180 : 500);
+      if (!remoteView) fitCameraToStage(container);
+      else camera.position.set(0, 6, -9);
 
-      scene.fog = new THREE.FogExp2(0x1a103c, 0.008);
-      camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 500);
-      fitCameraToStage(container);
-
-      renderer = new THREE.WebGLRenderer({ antialias: window.innerWidth >= 768, powerPreference: 'high-performance' });
+      renderer = new THREE.WebGLRenderer({
+        antialias: !remoteView && window.innerWidth >= 768,
+        powerPreference: remoteView ? 'low-power' : 'high-performance',
+        alpha: false
+      });
       renderer.setSize(w, h);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, window.innerWidth < 768 ? 1.25 : 1.5));
-      // 高負荷な影は大画面PCでのみ使用。スマホではGPU負荷を下げる。
-      renderer.shadowMap.enabled = window.innerWidth >= 768;
+      renderer.setPixelRatio(remoteView ? 1 : Math.min(window.devicePixelRatio || 1, window.innerWidth < 768 ? 1.25 : 1.5));
+      renderer.shadowMap.enabled = !remoteView && window.innerWidth >= 768;
       container.appendChild(renderer.domElement);
 
-      const hemiLight = new THREE.HemisphereLight(0xffffff, 0x4c1d95, 0.95);
+      const hemiLight = new THREE.HemisphereLight(0xffffff, 0x4c1d95, 1.1);
       scene.add(hemiLight);
-
-      const dirLight = new THREE.DirectionalLight(0xfffbeb, 0.9);
-      dirLight.position.set(25, 45, 25);
-      dirLight.castShadow = true;
+      const dirLight = new THREE.DirectionalLight(0xfffbeb, remoteView ? 0.85 : 0.9);
+      dirLight.position.set(15, 32, 15);
+      dirLight.castShadow = !remoteView && window.innerWidth >= 768;
       scene.add(dirLight);
 
       platformGroup = new THREE.Group();
@@ -474,25 +463,22 @@
       crownMesh = createCrownMesh();
       scene.add(crownMesh);
 
-      sweeperBarGroup = createSweeperBar();
-      sweeperBarGroup.visible = false;
-      scene.add(sweeperBarGroup);
-
-      for (let i = 0; i < 14; i++) {
-        spawnCandy();
-      }
-
-      if (!roomParam && THREE.GLTFLoader) {
-        gltfLoader = new THREE.GLTFLoader();
-        tryAutoLoadCharacterGLB();
+      // スマホでは3Dステージとプレイヤーだけを描画。飴・GLB読込・影などの重い処理は省く。
+      if (!remoteView) {
+        for (let i = 0; i < 14; i++) spawnCandy();
+        if (THREE.GLTFLoader) {
+          gltfLoader = new THREE.GLTFLoader();
+          tryAutoLoadCharacterGLB();
+        }
       }
 
       window.addEventListener('resize', () => {
-        if (!container.clientWidth || !container.clientHeight) return;
-        camera.aspect = container.clientWidth / container.clientHeight;
+        const cw = container.clientWidth, ch = container.clientHeight;
+        if (!cw || !ch || !renderer || !camera) return;
+        camera.aspect = cw / ch;
         camera.updateProjectionMatrix();
-        fitCameraToStage(container);
-        renderer.setSize(container.clientWidth, container.clientHeight);
+        if (!remoteView) fitCameraToStage(container);
+        renderer.setSize(cw, ch);
       });
     }
 
@@ -567,23 +553,6 @@
       return group;
     }
 
-    function createSweeperBar() {
-      const group = new THREE.Group();
-      const postGeo = new THREE.CylinderGeometry(1.6, 1.8, 3.2, 16);
-      const postMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.3 });
-      const post = new THREE.Mesh(postGeo, postMat);
-      post.position.y = 1.6;
-      group.add(post);
-
-      const barGeo = new THREE.CylinderGeometry(0.65, 0.65, stageRadius * 1.85, 16);
-      barGeo.rotateZ(Math.PI / 2);
-      const barMat = new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0xbe123c, emissiveIntensity: 0.3 });
-      const bar = new THREE.Mesh(barGeo, barMat);
-      bar.position.y = 1.1;
-      group.add(bar);
-
-      return group;
-    }
 
     // ============================================================================
     // 4. 二頭身キャラクター生成 ＆ Blender (.glb) 切り替え
@@ -734,13 +703,13 @@
       const idx = Object.keys(players).length;
       const color = POP_COLORS[idx % POP_COLORS.length];
       const face = isBot ? '🤖' : POP_FACES[idx % POP_FACES.length];
-      const mesh = roomParam ? new THREE.Group() : createChibiCharacterMesh(color);
+      const mesh = createChibiCharacterMesh(color);
 
       const ang = Math.random() * Math.PI * 2;
-      const rad = 3 + Math.random() * 7;
+      const rad = isBot ? 12 + Math.random() * 10 : 8 + Math.random() * 9;
       const sx = Math.cos(ang) * rad;
       const sz = Math.sin(ang) * rad;
-      mesh.position.set(sx, 8, sz);
+      mesh.position.set(sx, 0, sz);
       scene.add(mesh);
 
       players[id] = {
@@ -750,7 +719,11 @@
         color,
         isBot,
         mesh,
-        x: sx, y: 8, z: sz,
+        x: sx, y: 0, z: sz,
+        targetX: sx, targetY: 0, targetZ: sz,
+        renderX: sx, renderY: 0, renderZ: sz,
+        renderInitialized: false, snapshotReceivedAt: performance.now(),
+        botSlotIndex: idx, botSlotAngle: (idx * 2.399963229728653) % (Math.PI * 2), botTargetId: null,
         vx: 0, vy: 0, vz: 0,
         joyX: 0, joyY: 0,
         angle: 0,
@@ -789,11 +762,13 @@
     // AI CPUを1体増やす
     function spawnBot() {
       const botNames = ['ぷにロボ', 'モチまる', 'コロ助', 'ピコ太郎', 'ネジくん', 'タマちゃん', 'メカっち', 'ゴロリ'];
-      const id = 'bot_' + Math.random().toString(36).substring(2, 7);
       const botList = Object.values(players).filter(p => p.isBot);
+      // CPU過多による衝突判定・演出の負荷を抑える。
+      if (botList.length >= 8) return;
+      const id = 'bot_' + Math.random().toString(36).substring(2, 7);
       const name = botNames[botList.length % botNames.length] + (botList.length + 1);
       ensurePlayer(id, name, true);
-      playSound('jump');
+      playSound('boing');
     }
 
     // AI CPUを1体減らす
@@ -821,22 +796,15 @@
     }
 
     // アクション処理
-    function doJump(p) {
-      if (p.y <= 0.15) {
-        p.vy = 0.62;
-        playSound('jump');
-      }
-    }
 
     function doDive(p) {
       if (p.diveTimer > 0) return;
       const dirX = Math.abs(p.joyX) + Math.abs(p.joyY) > 0.1 ? p.joyX : Math.sin(p.angle);
       const dirZ = Math.abs(p.joyX) + Math.abs(p.joyY) > 0.1 ? p.joyY : Math.cos(p.angle);
       const len = Math.hypot(dirX, dirZ) || 1;
-      p.vx += (dirX / len) * 0.62;
-      p.vz += (dirZ / len) * 0.62;
-      if (p.y <= 0.2) p.vy = 0.32;
-      p.diveTimer = 22;
+      p.vx += (dirX / len) * 0.34;
+      p.vz += (dirZ / len) * 0.34;
+      p.diveTimer = 18;
       playSound('dive');
     }
 
@@ -846,23 +814,7 @@
       p.spinAnimTimer = 25;
       playSound('spin');
 
-      const ringGeo = new THREE.RingGeometry(0.8, 1.5, 32);
-      ringGeo.rotateX(-Math.PI / 2);
-      const ringMat = new THREE.MeshBasicMaterial({ color: p.color, transparent: true, opacity: 0.9, side: THREE.DoubleSide });
-      const ringMesh = new THREE.Mesh(ringGeo, ringMat);
-      ringMesh.position.set(p.x, p.y + 0.6, p.z);
-      scene.add(ringMesh);
-
-      let f = 0;
-      const anim = setInterval(() => {
-        f++;
-        ringMesh.scale.setScalar(1 + f * 0.65);
-        ringMat.opacity = 1 - f / 14;
-        if (f >= 14) {
-          clearInterval(anim);
-          scene.remove(ringMesh);
-        }
-      }, 16);
+      // per-attackのsetIntervalや大量の画面演出を作らず、軽い回転アニメーションで表現する。
 
       const powerMult = crownState.holderId === p.id ? 1.45 : 1.0;
       Object.values(players).forEach(other => {
@@ -871,10 +823,9 @@
         const dz = other.z - p.z;
         const dist = Math.hypot(dx, dz);
         if (dist < 8.5 && dist > 0.01) {
-          const force = ((8.5 - dist) / 8.5) * 1.0 * powerMult;
+          const force = ((8.5 - dist) / 8.5) * 0.48 * powerMult;
           other.vx += (dx / dist) * force;
           other.vz += (dz / dist) * force;
-          other.vy = 0.42;
           other.lastHitBy = p.id;
           showFloatingText(other.x, other.y + 2, other.z, '💥 SPIN HIT!', '#facc15');
         }
@@ -882,25 +833,16 @@
     }
 
     function triggerArenaEvent() {
-      sweeperState.active = !sweeperState.active;
-      sweeperBarGroup.visible = sweeperState.active;
+      for (let i = 0; i < 5; i++) spawnCandy();
       const banner = document.getElementById('big-alert');
       const statusEl = document.getElementById('stage-status');
-
-      if (sweeperState.active) {
-        statusEl.textContent = '⚠️ 回転ハンマーバー稼働中！ジャンプで飛び越えろ！';
-        banner.textContent = '⚠️ 巨大回転ハンマー出現！！ジャンプで飛び越えろ！';
+      if (statusEl) statusEl.textContent = '🍬 キャンディを拾い、王冠を守れ！';
+      if (banner) {
+        banner.textContent = '🍬 キャンディボーナス出現！';
         banner.classList.remove('hidden');
-        setTimeout(() => banner.classList.add('hidden'), 4000);
-        playSound('ko');
-      } else {
-        statusEl.textContent = '👑 中央の「王冠」を奪い合え！';
-        for (let i = 0; i < 6; i++) spawnCandy();
-        banner.textContent = '🍬 キャンディボーナス大量出現！！';
-        banner.classList.remove('hidden');
-        setTimeout(() => banner.classList.add('hidden'), 3500);
-        playSound('crown');
+        setTimeout(() => banner.classList.add('hidden'), 2200);
       }
+      playSound('crown');
     }
 
     // ============================================================================
@@ -908,11 +850,6 @@
     // ============================================================================
     function updateGamePhysics() {
       const pList = Object.values(players);
-
-      if (sweeperState.active) {
-        sweeperState.angle += sweeperState.speed;
-        sweeperBarGroup.rotation.y = sweeperState.angle;
-      }
 
       crownState.angle += 0.05;
       if (crownState.holderId && players[crownState.holderId]) {
@@ -930,65 +867,94 @@
         if (p.diveTimer > 0) p.diveTimer--;
         if (p.spinAnimTimer > 0) p.spinAnimTimer--;
 
-        // AI CPUの判断ロジック
+        // CPUは人間プレイヤーを優先して追い、担当先と接近角度を分散して密集を防ぐ。
         if (p.isBot) {
           p.botDecisionTimer--;
           if (p.botDecisionTimer <= 0) {
-            p.botDecisionTimer = 18 + Math.floor(Math.random() * 25);
-            const distCenter = Math.hypot(p.x, p.z);
-            if (distCenter > stageRadius * 0.68) {
-              p.joyX = -p.x / distCenter;
-              p.joyY = -p.z / distCenter;
-              if (Math.random() < 0.5) doDive(p);
-            } else if (!crownState.holderId) {
-              const dx = crownState.x - p.x;
-              const dz = crownState.z - p.z;
-              const d = Math.hypot(dx, dz) || 1;
-              p.joyX = dx / d;
-              p.joyY = dz / d;
+            p.botDecisionTimer = 22 + Math.floor(Math.random() * 15);
+            const distCenter = Math.hypot(p.x, p.z) || 1;
+            let goalX = 0, goalZ = 0, target = null;
+
+            if (distCenter > stageRadius * 0.78) {
+              goalX = -p.x / distCenter * 10;
+              goalZ = -p.z / distCenter * 10;
             } else {
-              const others = pList.filter(o => o.id !== p.id);
-              if (others.length > 0) {
-                const target = others[Math.floor(Math.random() * others.length)];
-                const dx = target.x - p.x;
-                const dz = target.z - p.z;
-                const d = Math.hypot(dx, dz) || 1;
-                p.joyX = dx / d;
-                p.joyY = dz / d;
-                if (d < 5.5 && Math.random() < 0.45) doSpinAttack(p);
-                else if (d < 8 && Math.random() < 0.35) doDive(p);
+              const humans = pList.filter(o => !o.isBot && o.id !== p.id);
+              if (humans.length) {
+                // 距離だけでなく、既に担当しているCPU数も考慮して人間側へ均等に向かう。
+                let bestScore = Infinity;
+                humans.forEach(human => {
+                  const d = Math.hypot(human.x - p.x, human.z - p.z);
+                  const load = pList.reduce((n, other) => n + (other.isBot && other.id !== p.id && other.botTargetId === human.id ? 1 : 0), 0);
+                  const score = d * 0.18 + load * 5.5;
+                  if (score < bestScore) { bestScore = score; target = human; }
+                });
+                if (target) {
+                  p.botTargetId = target.id;
+                  const slotAngle = p.botSlotAngle + (p.botSlotIndex % 3) * 0.13;
+                  const orbitRadius = 3.2 + (p.botSlotIndex % 3) * 0.65;
+                  goalX = target.x + Math.cos(slotAngle) * orbitRadius;
+                  goalZ = target.z + Math.sin(slotAngle) * orbitRadius;
+                }
+              } else {
+                p.botTargetId = null;
+                // 人間がいない時も王冠の真上に全員が重ならないよう、外周の担当位置を狙う。
+                const a = p.botSlotAngle;
+                goalX = crownState.x + Math.cos(a) * (3.2 + (p.botSlotIndex % 3) * 1.2);
+                goalZ = crownState.z + Math.sin(a) * (3.2 + (p.botSlotIndex % 3) * 1.2);
               }
             }
+
+            let dx = goalX - p.x, dz = goalZ - p.z;
+            // 近いCPUから反発し、集団がひと塊になるのを防ぐ。場外付近では中央への復帰を優先。
+            if (distCenter <= stageRadius * 0.78) {
+              pList.forEach(other => {
+                if (!other.isBot || other.id === p.id) return;
+                const ox = p.x - other.x, oz = p.z - other.z;
+                const od = Math.hypot(ox, oz);
+                if (od > 0.01 && od < 5.2) {
+                  const weight = (5.2 - od) / 5.2 * 2.8;
+                  dx += (ox / od) * weight;
+                  dz += (oz / od) * weight;
+                }
+              });
+            }
+            const d = Math.hypot(dx, dz) || 1;
+            p.joyX = dx / d;
+            p.joyY = dz / d;
+
+            if (target) {
+              const toTarget = Math.hypot(target.x - p.x, target.z - p.z);
+              if (toTarget < 6.4 && p.spinCd <= 0 && Math.random() < 0.18) doSpinAttack(p);
+              else if (toTarget < 4.6 && p.diveTimer <= 0 && Math.random() < 0.09) doDive(p);
+            }
           }
-          if (sweeperState.active && p.y <= 0.1 && Math.random() < 0.04) doJump(p);
         }
 
-        // 加速とノックバックを抑え、広いステージでも細かく制御しやすくする。
+        // 移動上限を設け、急な吹き飛ばしで即座に場外へ飛ぶのを抑える。
         const moveAccel = crownState.holderId === p.id ? 0.021 : 0.018;
         p.vx += p.joyX * moveAccel;
         p.vz += p.joyY * moveAccel;
-
+        const maxSpeed = p.diveTimer > 0 ? 0.205 : 0.135;
+        const speedNow = Math.hypot(p.vx, p.vz);
+        if (speedNow > maxSpeed) { p.vx = p.vx / speedNow * maxSpeed; p.vz = p.vz / speedNow * maxSpeed; }
         p.x += p.vx;
         p.z += p.vz;
         p.vx *= 0.86;
         p.vz *= 0.86;
 
+        // ジャンプや重力演算は廃止。ステージ外に出た時だけ落下KOを処理する。
         const distFromCenter = Math.hypot(p.x, p.z);
-        if (distFromCenter <= stageRadius + 0.7 && p.y >= -0.4) {
-          p.y += p.vy;
-          if (p.y > 0) {
-            p.vy -= 0.032;
-          } else {
-            p.y = 0;
-            p.vy = 0;
-          }
+        if (distFromCenter > stageRadius + 0.3 || p.y < 0) {
+          p.y = Math.max(-12, p.y - 0.28);
         } else {
-          p.y += p.vy;
-          p.vy -= 0.048;
+          p.y = 0;
+          p.vy = 0;
         }
 
         const targetScale = crownState.holderId === p.id ? 1.32 : 1.0;
-        p.mesh.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1);
+        const scaleNow = p.mesh.scale.x + (targetScale - p.mesh.scale.x) * 0.1;
+        p.mesh.scale.setScalar(scaleNow);
 
         const speed = Math.hypot(p.vx, p.vz);
         if (speed > 0.02) {
@@ -1027,19 +993,6 @@
           showFloatingText(p.x, p.y + 3, p.z, '👑 CROWN GET! +100', '#facc15');
           spawnDanmaku(`👑 ${p.name} が黄金の王冠を奪取して巨大化！！`, '#facc15');
           updateRankingUI();
-        }
-
-        if (sweeperState.active && p.y < 1.5 && distFromCenter < stageRadius * 0.92) {
-          const barCos = Math.cos(-sweeperState.angle);
-          const barSin = Math.sin(-sweeperState.angle);
-          const perpDist = Math.abs(p.x * barSin + p.z * barCos);
-          if (perpDist < 1.35) {
-            p.vx += -barSin * 1.1;
-            p.vz += -barCos * 1.1;
-            p.vy = 0.45;
-            playSound('boing');
-            showFloatingText(p.x, p.y + 2, p.z, '💥 HAMMER HIT!', '#f43f5e');
-          }
         }
 
         if (p.y < -11) {
@@ -1138,7 +1091,7 @@
       const rad = Math.random() * 8;
       victim.x = Math.cos(ang) * rad;
       victim.z = Math.sin(ang) * rad;
-      victim.y = 12;
+      victim.y = 0;
       victim.vx = 0; victim.vy = 0; victim.vz = 0;
       victim.lastHitBy = null;
       updateRankingUI();
@@ -1180,8 +1133,12 @@
       return String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
     }
 
+    let lastRankingSignature = '';
     function updateRankingUI() {
       const list = Object.values(players).sort((a, b) => b.score - a.score);
+      const signature = list.map(p => `${p.id}:${p.name}:${p.score}:${p.color}:${p.isBot}:${crownState.holderId === p.id}`).join('|');
+      if (signature === lastRankingSignature) return;
+      lastRankingSignature = signature;
       document.getElementById('player-count').textContent = `${list.length}人`;
       const board = document.getElementById('leaderboard');
       board.innerHTML = list.map((p, i) => `
@@ -1201,9 +1158,11 @@
       crownState.x = 0; crownState.z = 0;
       Object.values(players).forEach(p => {
         p.score = 0;
-        p.x = (Math.random() - 0.5) * 10;
-        p.z = (Math.random() - 0.5) * 10;
-        p.y = 8;
+        const a = Math.random() * Math.PI * 2;
+        const r = 7 + Math.random() * 10;
+        p.x = Math.cos(a) * r;
+        p.z = Math.sin(a) * r;
+        p.y = 0;
         p.vx = 0; p.vy = 0; p.vz = 0;
       });
       updateRankingUI();
@@ -1266,7 +1225,7 @@
       // スコアだけではなく、キャラクターの位置・CPU数・王冠もホストの状態を正として同期する。
       setInterval(() => {
         if (!roomParam && mqttClient && mqttClient.connected) publishHostState();
-      }, 90);
+      }, 75);
 
       // 明示的な退出通知。届かなかった場合もハートビートタイムアウトで回収する。
       const sendLeave = () => {
@@ -1303,15 +1262,20 @@
           diveTimer: p.diveTimer, spinAnimTimer: p.spinAnimTimer
         })),
         crown: { holderId: crownState.holderId, x: crownState.x, z: crownState.z, angle: crownState.angle },
-        sweeper: { active: sweeperState.active, angle: sweeperState.angle }
       };
       mqttClient.publish(mqttTopicState, JSON.stringify(state), { qos: 0, retain: false });
     }
 
     let latestSnapshotPlayers = [];
+    let lastSnapshotReceivedAt = performance.now();
+    let localVisualSpinUntil = 0;
+    let localVisualDiveUntil = 0;
     function applyAuthoritativeState(state) {
       if (!state || !Array.isArray(state.players)) return;
       latestSnapshotPlayers = state.players;
+      // 送信時刻から推定できる通信中の時間を短く補正し、描画の先行予測に使う。
+      const transitMs = Number.isFinite(state.sentAt) ? Math.max(0, Math.min(130, Date.now() - state.sentAt)) : 0;
+      lastSnapshotReceivedAt = performance.now() - transitMs;
       const live = new Set();
       state.players.forEach(snap => {
         if (!snap || !snap.id) return;
@@ -1319,13 +1283,22 @@
         const p = ensurePlayer(snap.id, snap.name, !!snap.isBot);
         p.name = snap.name || p.name;
         p.face = snap.face || p.face;
+        const oldColor = p.color;
         p.color = snap.color || p.color;
         p.isBot = !!snap.isBot;
         ['x', 'y', 'z', 'vx', 'vy', 'vz', 'angle', 'score', 'spinCd', 'diveTimer', 'spinAnimTimer'].forEach(k => {
           if (typeof snap[k] === 'number') p[k] = snap[k];
         });
+        p.targetX = p.x; p.targetY = p.y; p.targetZ = p.z;
+        p.snapshotReceivedAt = performance.now();
         p.lastSeenAt = Date.now();
-        if (p.mesh) {
+        if (roomParam && oldColor !== p.color && p.mesh) {
+          scene.remove(p.mesh);
+          p.mesh = createChibiCharacterMesh(p.color);
+          scene.add(p.mesh);
+          p.renderInitialized = false;
+        }
+        if (!roomParam && p.mesh) {
           p.mesh.position.set(p.x, p.y, p.z);
           p.mesh.rotation.y = p.angle;
         }
@@ -1338,10 +1311,6 @@
         crownState.x = Number(state.crown.x) || 0;
         crownState.z = Number(state.crown.z) || 0;
         crownState.angle = Number(state.crown.angle) || 0;
-      }
-      if (state.sweeper) {
-        sweeperState.active = !!state.sweeper.active;
-        sweeperState.angle = Number(state.sweeper.angle) || 0;
       }
       updateRankingUI();
       updateBotCountUI();
@@ -1388,7 +1357,9 @@
         type: 'input',
         ...extra
       };
-      // 展示PC内のコントローラーは即時反映。スマホはホスト権威の状態を待ち、二重シミュレーションしない。
+      // 画面上のアクションだけは入力直後に先行表示し、ゲーム判定はホスト権威のまま維持する。
+      if (roomParam && extra.action === 'spin') localVisualSpinUntil = performance.now() + 360;
+      if (roomParam && extra.action === 'dive') localVisualDiveUntil = performance.now() + 260;
       if (!roomParam) handleHostPacket(packet);
       if (roomParam && mqttClient && mqttClient.connected) {
         mqttClient.publish(mqttTopicHost, JSON.stringify(packet), { qos: 0, retain: false });
@@ -1405,7 +1376,6 @@
       if (typeof data.jx === 'number') p.joyX = data.jx;
       if (typeof data.jy === 'number') p.joyY = data.jy;
 
-      if (data.action === 'jump') doJump(p);
       if (data.action === 'dive') doDive(p);
       if (data.action === 'spin') doSpinAttack(p);
       if (data.reaction) {
@@ -1477,10 +1447,6 @@
       zone.addEventListener('pointerup', resetKnob);
       zone.addEventListener('pointercancel', resetKnob);
 
-      document.getElementById('btn-jump').addEventListener('pointerdown', e => {
-        e.preventDefault();
-        sendControllerInput({ action: 'jump' });
-      });
       document.getElementById('btn-dive').addEventListener('pointerdown', e => {
         e.preventDefault();
         sendControllerInput({ action: 'dive' });
@@ -1494,7 +1460,6 @@
       window.addEventListener('keydown', e => {
         if (document.activeElement.tagName === 'INPUT') return;
         keys[e.code] = true;
-        if (e.code === 'Space') sendControllerInput({ action: 'jump' });
         if (e.code === 'ShiftLeft' || e.code === 'KeyZ') sendControllerInput({ action: 'dive' });
         if (e.code === 'Enter' || e.code === 'KeyX') sendControllerInput({ action: 'spin' });
         syncKeyVec();
@@ -1519,14 +1484,84 @@
         const now = performance.now();
         const moving = Math.abs(joyVec.x) > 0.015 || Math.abs(joyVec.y) > 0.015;
         const changed = Math.abs(joyVec.x - lastSentX) > 0.025 || Math.abs(joyVec.y - lastSentY) > 0.025;
-        // 移動中は約30Hzで送信。停止中もハートビートを送り、退出検知と再接続を安定させる。
+        // 移動中は約25Hzで送信。停止中もハートビートを送り、退出検知と再接続を安定させる。
         if (moving || changed || now - lastSentAt > 650) {
           sendControllerInput({ type: moving ? 'input' : 'heartbeat' });
           lastSentAt = now;
           lastSentX = joyVec.x;
           lastSentY = joyVec.y;
         }
-      }, 33);
+      }, 40);
+    }
+
+    function renderFollowCamera(now, elapsedMs) {
+      if (!roomParam || !renderer || !scene || !camera) return;
+      const me = players[myClientId];
+      const frameScale = Math.min(2, Math.max(0.5, elapsedMs / (1000 / 60)));
+      const ageFrames = Math.min(8, Math.max(0, (now - lastSnapshotReceivedAt) / (1000 / 60)));
+      let focusX = 0, focusY = 0, focusZ = 0, focusAngle = 0;
+
+      Object.values(players).forEach(p => {
+        // Snapshot間は速度を使って短時間だけ前方予測。ローカル入力はさらに先行反映する。
+        const predictedFrames = Math.min(8, ageFrames + 1);
+        let tx = p.targetX + p.vx * predictedFrames;
+        let tz = p.targetZ + p.vz * predictedFrames;
+        if (p.id === myClientId) {
+          tx += joyVec.x * (0.07 * predictedFrames + 0.06);
+          tz += joyVec.y * (0.07 * predictedFrames + 0.06);
+        }
+        const ty = p.targetY;
+        if (!p.renderInitialized) {
+          p.renderX = tx; p.renderY = ty; p.renderZ = tz; p.renderInitialized = true;
+        } else {
+          const smooth = 1 - Math.pow(0.70, frameScale);
+          p.renderX += (tx - p.renderX) * smooth;
+          p.renderY += (ty - p.renderY) * smooth;
+          p.renderZ += (tz - p.renderZ) * smooth;
+        }
+        if (p.mesh) {
+          p.mesh.position.set(p.renderX, p.renderY, p.renderZ);
+          const localMoving = p.id === myClientId && Math.hypot(joyVec.x, joyVec.y) > 0.12;
+          if (p.spinAnimTimer > 0 || (p.id === myClientId && now < localVisualSpinUntil)) {
+            p.mesh.rotation.y += 0.42 * frameScale;
+          } else {
+            p.mesh.rotation.y = localMoving ? Math.atan2(joyVec.x, joyVec.y) : p.angle;
+          }
+          const ud = p.mesh.userData;
+          if (ud && ud.bodyGroup) {
+            const dashing = p.diveTimer > 0 || (p.id === myClientId && now < localVisualDiveUntil);
+            ud.bodyGroup.rotation.x = dashing ? -0.48 : 0;
+            ud.bodyGroup.position.y = dashing ? 0.25 : 0;
+          }
+        }
+      });
+
+      if (me) {
+        focusX = me.renderX; focusY = me.renderY; focusZ = me.renderZ;
+        focusAngle = (Math.hypot(joyVec.x, joyVec.y) > 0.12)
+          ? Math.atan2(joyVec.x, joyVec.y)
+          : me.angle;
+      }
+
+      // キャラの後方・少し高い位置から追尾。カメラも補間して酔いにくくする。
+      const fx = Math.sin(focusAngle), fz = Math.cos(focusAngle);
+      const desiredX = focusX - fx * 8.2;
+      const desiredY = focusY + 5.3;
+      const desiredZ = focusZ - fz * 8.2;
+      const cameraSmooth = 1 - Math.pow(0.76, frameScale);
+      camera.position.x += (desiredX - camera.position.x) * cameraSmooth;
+      camera.position.y += (desiredY - camera.position.y) * cameraSmooth;
+      camera.position.z += (desiredZ - camera.position.z) * cameraSmooth;
+      camera.lookAt(focusX + fx * 2.1, focusY + 1.25, focusZ + fz * 2.1);
+
+      // 持ち主がいる場合も王冠を追従させる。
+      const holder = crownState.holderId ? players[crownState.holderId] : null;
+      if (holder) {
+        crownMesh.position.set(holder.renderX ?? holder.x, (holder.renderY ?? holder.y) + 3.7, holder.renderZ ?? holder.z);
+      } else {
+        crownMesh.position.set(crownState.x, 1.3, crownState.z);
+      }
+      crownMesh.rotation.y += 0.025 * frameScale;
     }
 
     function drawMiniMap() {
@@ -1676,7 +1711,7 @@
           if (timerEl) timerEl.textContent = `00:${String(eventCountdown).padStart(2, '0')}`;
         }
 
-        // 全プレイヤー情報はpublishHostState()が約90msごとに送信する。
+        // 全プレイヤー情報はpublishHostState()が約75msごとに送信する。
       }, 1000);
 
       let lastFrameTime = performance.now();
@@ -1699,8 +1734,13 @@
         }
         if (!roomParam) renderNetworkVisualizer();
         drawMiniMap();
-        const hostVisible = !document.getElementById('host-section').classList.contains('hidden');
-        if (hostVisible && renderer && scene && camera) renderer.render(scene, camera);
+        if (roomParam) {
+          renderFollowCamera(now, elapsed);
+          if (renderer && scene && camera) renderer.render(scene, camera);
+        } else {
+          const hostVisible = !document.getElementById('host-section').classList.contains('hidden');
+          if (hostVisible && renderer && scene && camera) renderer.render(scene, camera);
+        }
       }
       animate();
     });
