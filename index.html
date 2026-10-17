@@ -15,7 +15,7 @@
     * { box-sizing: border-box; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #1a103c; color: #fff; font-family: 'M PLUS Rounded 1c', sans-serif; touch-action: none; }
     .font-arcade { font-family: 'Orbitron', 'M PLUS Rounded 1c', sans-serif; }
-    .pop-panel { background: rgba(26, 16, 60, 0.88); backdrop-filter: blur(10px); border: 3px solid rgba(255, 255, 255, 0.25); box-shadow: 0 8px 0 rgba(0, 0, 0, 0.4), 0 0 25px rgba(236, 72, 153, 0.3); border-radius: 18px; }
+    .pop-panel { background: rgba(26, 16, 60, 0.92); backdrop-filter: blur(10px); border: 3px solid rgba(255, 255, 255, 0.25); box-shadow: 0 8px 0 rgba(0, 0, 0, 0.4), 0 0 25px rgba(236, 72, 153, 0.3); border-radius: 18px; }
     .arcade-btn { box-shadow: 0 5px 0 rgba(0,0,0,0.5); transition: transform 0.08s, box-shadow 0.08s; }
     .arcade-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 rgba(0,0,0,0.5); }
     @keyframes floatPop {
@@ -35,27 +35,23 @@
 
   <!-- 上部アーケードヘッダー -->
   <header id="top-bar" class="h-14 bg-gradient-to-r from-indigo-950 via-purple-900 to-pink-900 border-b-4 border-pink-500/60 px-3 flex items-center justify-between z-50 shrink-0 shadow-lg">
-    <div class="flex items-center gap-2.5">
+    <div class="flex items-center gap-2">
       <div class="w-4 h-4 rounded-full bg-yellow-400 animate-bounce shadow-[0_0_12px_#facc15]" id="net-led"></div>
-      <h1 class="font-black text-base md:text-xl tracking-wider text-white drop-shadow-[0_3px_0_#000]">
+      <h1 class="font-black text-sm md:text-xl tracking-wider text-white drop-shadow-[0_3px_0_#000]">
         🎪 WACHA-WACHA <span class="text-yellow-300">KNOCKOUT!</span>
       </h1>
-      <span class="hidden sm:inline-block text-[11px] bg-indigo-950/80 text-pink-300 border border-pink-400/40 px-2.5 py-0.5 rounded-full font-black">
-        Computer Communication Circle
-      </span>
-      <span id="conn-badge" class="text-[11px] bg-black/50 text-emerald-300 border border-emerald-400/50 px-2.5 py-0.5 rounded-full font-bold">SYNC READY</span>
+      <span id="conn-badge" class="text-[10px] md:text-[11px] bg-black/50 text-emerald-300 border border-emerald-400/50 px-2 py-0.5 rounded-full font-bold">SYNC</span>
     </div>
 
-    <div class="flex items-center gap-1.5 md:gap-2">
-      <!-- ご指定の .glb 読み込みボタン（維持） -->
+    <div class="flex items-center gap-1.5">
       <label id="glb-upload-label" class="arcade-btn cursor-pointer text-xs px-2.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black flex items-center gap-1">
         📁 .glb読込
         <input type="file" id="glb-file-input" accept=".glb,.gltf" class="hidden" onchange="handleLocalGLBUpload(event)" />
       </label>
-      <button onclick="switchViewMode('host')" id="btn-mode-host" class="arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-pink-500 text-white font-black">展示大画面</button>
-      <button onclick="switchViewMode('split')" id="btn-mode-split" class="arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-indigo-800 text-indigo-100 font-bold hover:bg-indigo-700">分割テスト</button>
-      <button onclick="switchViewMode('controller')" id="btn-mode-ctrl" class="arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-indigo-800 text-indigo-100 font-bold hover:bg-indigo-700">スマホ画面</button>
-      <button onclick="toggleAudio()" id="btn-audio" class="arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-black">🔊 音ON</button>
+      <button onclick="switchViewMode('host')" id="btn-mode-host" class="arcade-btn text-xs px-2 py-1.5 rounded-xl bg-pink-500 text-white font-black">大画面</button>
+      <button onclick="switchViewMode('split')" id="btn-mode-split" class="arcade-btn text-xs px-2 py-1.5 rounded-xl bg-indigo-800 text-indigo-100 font-bold">分割</button>
+      <button onclick="switchViewMode('controller')" id="btn-mode-ctrl" class="arcade-btn text-xs px-2 py-1.5 rounded-xl bg-indigo-800 text-indigo-100 font-bold">スマホ</button>
+      <button onclick="toggleAudio()" id="btn-audio" class="arcade-btn text-xs px-2 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-black">🔊 音</button>
     </div>
   </header>
 
@@ -65,78 +61,55 @@
     <!-- ================= 展示用3D大画面 (HOST) ================= -->
     <div id="host-section" class="flex-1 relative flex overflow-hidden bg-indigo-950">
 
-      <!-- 左サイドパネル: 来場者参加QR ＆ 通信モニター ＆ CPU増減 -->
-      <aside class="w-72 pop-panel m-2.5 z-20 flex flex-col justify-between p-3.5 shrink-0 hidden md:flex">
-        <div class="space-y-3">
-          <!-- QR & ルームコード -->
-          <div class="bg-indigo-950/90 border-2 border-pink-400/60 rounded-2xl p-3 text-center shadow-inner">
+      <!-- 左サイドパネル -->
+      <aside class="w-72 pop-panel m-2 z-20 flex flex-col justify-between p-3 shrink-0 hidden md:flex">
+        <div class="space-y-2.5">
+          <div class="bg-indigo-950/90 border-2 border-pink-400/60 rounded-2xl p-2.5 text-center shadow-inner">
             <div class="flex items-center justify-between mb-1">
-              <span class="text-xs font-black text-yellow-300 tracking-wider">📱 スマホで飛び入り参加！</span>
-              <span class="text-[10px] bg-pink-500 text-white px-2 py-0.5 rounded-full font-black animate-pulse">参加無料</span>
+              <span class="text-xs font-black text-yellow-300">📱 スマホで参加！</span>
+              <span class="text-[10px] bg-pink-500 text-white px-2 py-0.5 rounded-full font-black animate-pulse">無料</span>
             </div>
-            <p class="text-[11px] text-indigo-200 font-bold mb-1">カメラでQRコードを読み取るだけ！</p>
-            <div id="qrcode-box" class="bg-white p-2 rounded-xl inline-block my-0.5 shadow-md"></div>
+            <div id="qrcode-box" class="bg-white p-1.5 rounded-xl inline-block my-0.5 shadow-md"></div>
             <div class="mt-1 bg-black/60 rounded-xl py-1 px-2 border border-white/15 flex items-center justify-between">
-              <span class="text-[10px] text-indigo-200 font-bold">ROOM番号</span>
-              <span id="room-code-text" class="font-arcade text-xl font-black text-yellow-300 tracking-widest">----</span>
+              <span class="text-[10px] text-indigo-200 font-bold">ROOM</span>
+              <span id="room-code-text" class="font-arcade text-lg font-black text-yellow-300 tracking-widest">----</span>
             </div>
           </div>
 
-          <!-- 来場者向けルールガイド（開発者向け説明から差し替え） -->
-          <div class="bg-indigo-900/60 border border-indigo-400/30 rounded-xl p-2.5 text-xs space-y-1">
-            <div class="font-black text-yellow-300 flex items-center justify-between">
-              <span>🎮 操作＆ルール</span>
-              <span class="text-[10px] bg-yellow-400/20 text-yellow-200 px-1.5 py-0.5 rounded">わちゃわちゃ乱闘</span>
-            </div>
-            <div class="text-[11px] text-indigo-100 leading-snug space-y-0.5">
-              <div>🕹️ <b>スティック</b>：移動＆押し合い</div>
-              <div>💥 <b>Aボタン</b>：回転アタックで吹き飛ばす</div>
-              <div>🚀 <b>Bボタン</b>：飛び込みダイブで突撃</div>
-              <div>👑 <b>王冠</b>を拾うと巨大化＆スコア大量！</div>
+          <div class="bg-indigo-900/60 border border-indigo-400/30 rounded-xl p-2 text-xs space-y-1">
+            <div class="font-black text-yellow-300">🎮 ルール＆操作</div>
+            <div class="text-[10px] text-indigo-100 leading-snug space-y-0.5">
+              <div>🕹️ スティック：移動＆押し合い</div>
+              <div>💥 回転アタック：周囲を吹き飛ばす</div>
+              <div>🚀 飛び込み：ダッシュ突撃</div>
+              <div>👑 王冠を拾うと巨大化！</div>
             </div>
           </div>
 
-          <!-- 通信パケットモニター -->
-          <div class="bg-black/50 border border-indigo-500/30 rounded-xl p-2.5">
+          <div class="bg-black/50 border border-indigo-500/30 rounded-xl p-2">
             <div class="flex items-center justify-between mb-1">
-              <span class="text-[11px] font-black text-cyan-300">📡 P2P 通信モニター</span>
-              <span id="pps-label" class="font-arcade text-[11px] text-emerald-400">0 pkt/s</span>
+              <span class="text-[10px] font-black text-cyan-300">📡 通信モニター</span>
+              <span id="pps-label" class="font-arcade text-[10px] text-emerald-400">0 pkt/s</span>
             </div>
-            <canvas id="net-canvas" width="230" height="68" class="w-full bg-indigo-950/90 rounded-lg border border-indigo-800"></canvas>
-            <div id="packet-log" class="mt-1 h-12 overflow-hidden text-[10px] font-mono text-cyan-200/80 space-y-0.5 leading-tight">
-              <div>[READY] Waiting for players...</div>
-            </div>
+            <canvas id="net-canvas" width="220" height="54" class="w-full bg-indigo-950/90 rounded-lg border border-indigo-800"></canvas>
           </div>
         </div>
 
-        <!-- 下部：AI CPUの増減コントロール ＆ ステージ操作 -->
-        <div class="space-y-2 pt-2 border-t border-white/15">
-          <!-- CPU増減パネル -->
+        <div class="space-y-1.5 pt-2 border-t border-white/15">
           <div class="bg-indigo-950/90 border border-cyan-400/40 rounded-xl p-2">
-            <div class="flex items-center justify-between mb-1.5">
-              <span class="text-xs font-black text-cyan-300">🤖 AI CPU人数調整</span>
-              <span id="bot-count-badge" class="font-arcade text-xs font-black bg-cyan-500/20 text-cyan-200 border border-cyan-400/40 px-2 py-0.5 rounded-full">4体</span>
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs font-black text-cyan-300">🤖 AI CPU人数</span>
+              <span id="bot-count-badge" class="font-arcade text-xs font-black bg-cyan-500/20 text-cyan-200 px-2 py-0.5 rounded-full">4体</span>
             </div>
-            <div class="grid grid-cols-3 gap-1.5">
-              <button onclick="removeBot()" class="arcade-btn bg-rose-500 hover:bg-rose-400 text-white font-black py-1.5 rounded-lg text-xs">
-                ➖ 減らす
-              </button>
-              <button onclick="spawnBot()" class="arcade-btn bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-black py-1.5 rounded-lg text-xs">
-                ➕ 増やす
-              </button>
-              <button onclick="clearBots()" class="arcade-btn bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold py-1.5 rounded-lg text-[11px]">
-                0体にする
-              </button>
+            <div class="grid grid-cols-3 gap-1">
+              <button onclick="removeBot()" class="arcade-btn bg-rose-500 text-white font-black py-1 rounded-lg text-xs">➖減らす</button>
+              <button onclick="spawnBot()" class="arcade-btn bg-cyan-400 text-slate-950 font-black py-1 rounded-lg text-xs">➕増やす</button>
+              <button onclick="clearBots()" class="arcade-btn bg-slate-700 text-slate-200 font-bold py-1 rounded-lg text-[10px]">0体</button>
             </div>
           </div>
-
-          <div class="grid grid-cols-2 gap-1.5">
-            <button onclick="triggerArenaEvent()" class="arcade-btn bg-pink-500 hover:bg-pink-400 text-white font-black py-1.5 rounded-xl text-xs">
-              ⚡ ギミック発動
-            </button>
-            <button onclick="resetMatch()" class="arcade-btn bg-indigo-800 hover:bg-indigo-700 text-indigo-100 font-bold py-1.5 rounded-xl text-xs">
-              🔄 リセット
-            </button>
+          <div class="grid grid-cols-2 gap-1">
+            <button onclick="triggerArenaEvent()" class="arcade-btn bg-pink-500 text-white font-black py-1 rounded-xl text-xs">⚡ ギミック</button>
+            <button onclick="resetMatch()" class="arcade-btn bg-indigo-800 text-indigo-100 font-bold py-1 rounded-xl text-xs">🔄 リセット</button>
           </div>
         </div>
       </aside>
@@ -146,114 +119,105 @@
         <div id="floating-layer" class="absolute inset-0 pointer-events-none overflow-hidden z-30"></div>
         <div id="danmaku-layer" class="absolute inset-0 pointer-events-none overflow-hidden z-40"></div>
 
-        <!-- 上部センター：ギミック＆王冠アナウンス -->
-        <div class="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center pointer-events-none w-full max-w-xl px-4">
-          <div class="pop-panel px-6 py-2 flex items-center gap-5 border-2 border-yellow-400/60">
+        <div class="absolute top-2 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center pointer-events-none w-full max-w-lg px-2">
+          <div class="pop-panel px-4 py-1.5 flex items-center gap-4 border-2 border-yellow-400/60">
             <div class="text-center">
-              <div class="text-[10px] text-pink-300 font-black">NEXT GIMMICK</div>
-              <div id="event-timer" class="font-arcade text-2xl font-black text-yellow-300">00:20</div>
+              <div class="text-[9px] text-pink-300 font-black">NEXT</div>
+              <div id="event-timer" class="font-arcade text-xl font-black text-yellow-300">00:20</div>
             </div>
-            <div class="h-8 w-0.5 bg-white/20"></div>
+            <div class="h-6 w-0.5 bg-white/20"></div>
             <div class="text-left">
-              <div class="text-[10px] text-cyan-300 font-black">STAGE MISSION</div>
-              <div id="stage-status" class="text-sm md:text-base font-black text-white">👑 中央の「王冠」を奪い合え！</div>
+              <div class="text-[9px] text-cyan-300 font-black">MISSION</div>
+              <div id="stage-status" class="text-xs md:text-sm font-black text-white">👑 中央の「王冠」を奪い合え！</div>
             </div>
           </div>
-
-          <!-- ド派手なイベントバナー -->
-          <div id="big-alert" class="hidden mt-3 bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 text-white font-black px-7 py-2.5 rounded-2xl shadow-[0_6px_0_#000] border-4 border-white text-lg md:text-xl tracking-wider animate-bounce">
-            ⚠️ 回転ハンマーバー出現！！ジャンプでかわすんだ！
+          <div id="big-alert" class="hidden mt-2 bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 text-white font-black px-5 py-2 rounded-xl shadow border-2 border-white text-base tracking-wider animate-bounce">
+            ⚠️ ギミック発動！！
           </div>
         </div>
 
-        <!-- 画面右上：わちゃわちゃランキング -->
-        <div class="absolute top-3 right-3 w-60 pop-panel p-3 z-30 pointer-events-none">
-          <div class="flex items-center justify-between border-b-2 border-white/15 pb-1.5 mb-2">
-            <span class="text-xs font-black text-yellow-300">🏆 スコアランキング</span>
-            <span id="player-count" class="text-[11px] bg-pink-500 text-white px-2 py-0.5 rounded-full font-black">0人</span>
+        <div class="absolute top-2 right-2 w-52 pop-panel p-2.5 z-30 pointer-events-none">
+          <div class="flex items-center justify-between border-b border-white/15 pb-1 mb-1.5">
+            <span class="text-xs font-black text-yellow-300">🏆 ランキング</span>
+            <span id="player-count" class="text-[10px] bg-pink-500 text-white px-2 py-0.5 rounded-full font-black">0人</span>
           </div>
-          <div id="leaderboard" class="space-y-1.5 text-xs max-h-64 overflow-y-auto"></div>
+          <div id="leaderboard" class="space-y-1 text-xs max-h-52 overflow-y-auto"></div>
         </div>
       </main>
     </div>
 
     <!-- ================= スマホコントローラー画面 (CLIENT) ================= -->
-    <div id="controller-section" class="w-full lg:w-[410px] bg-indigo-950 border-t-4 lg:border-t-0 lg:border-l-4 border-pink-500/60 flex flex-col justify-between p-3.5 z-30 shrink-0 select-none">
+    <div id="controller-section" class="w-full lg:w-[410px] bg-indigo-950 border-t-4 lg:border-t-0 lg:border-l-4 border-pink-500/60 flex flex-col justify-between p-2.5 z-30 shrink-0 select-none overflow-y-auto">
 
-      <!-- 上部：プレイヤー名 ＆ 4桁ルーム同期 -->
-      <div class="space-y-2">
-        <div class="flex items-center justify-between bg-indigo-900/90 p-2.5 rounded-2xl border-2 border-white/20 shadow-md">
-          <div class="flex items-center gap-2.5">
-            <div id="ctrl-color-icon" class="w-9 h-9 rounded-2xl bg-pink-500 border-2 border-white shadow-md flex items-center justify-center font-black text-lg">😆</div>
+      <!-- スマホ専用ミニ俯瞰プレビュー（手元を見なくてもキャラ位置がわかる！） -->
+      <div class="relative w-full h-32 bg-black/80 rounded-2xl border-2 border-pink-400/50 overflow-hidden mb-2 shrink-0 shadow-inner" id="mini-preview-container">
+        <div class="absolute top-1 left-2 z-10 text-[10px] font-black text-yellow-300 bg-black/60 px-2 py-0.5 rounded-md">👀 あなたの視点カメラ</div>
+      </div>
+
+      <!-- 上部：プレイヤー名 ＆ 同期 -->
+      <div class="space-y-1.5 shrink-0">
+        <div class="flex items-center justify-between bg-indigo-900/90 p-2 rounded-xl border border-white/20 shadow">
+          <div class="flex items-center gap-2">
+            <div id="ctrl-color-icon" class="w-8 h-8 rounded-xl bg-pink-500 border-2 border-white flex items-center justify-center font-black">😆</div>
             <div>
               <input id="ctrl-name-input" type="text" maxlength="8" value="PLAYER" onchange="sendProfileUpdate()"
-                class="bg-transparent font-black text-base text-white focus:outline-none border-b-2 border-dashed border-pink-300 w-28" />
-              <div id="ctrl-sync-text" class="text-[10px] text-emerald-300 font-bold">🟢 接続OK！</div>
+                class="bg-transparent font-black text-sm text-white focus:outline-none border-b border-dashed border-pink-300 w-24" />
+              <div id="ctrl-sync-text" class="text-[9px] text-emerald-300 font-bold">🟢 同期完了</div>
             </div>
           </div>
-          <div class="text-right bg-black/40 px-3 py-1 rounded-xl border border-yellow-400/40">
-            <div class="text-[10px] text-yellow-200 font-bold">SCORE</div>
-            <div id="ctrl-score-num" class="font-arcade text-2xl font-black text-yellow-300">0</div>
+          <div class="text-right bg-black/40 px-2.5 py-0.5 rounded-lg border border-yellow-400/40">
+            <div class="text-[9px] text-yellow-200 font-bold">SCORE</div>
+            <div id="ctrl-score-num" class="font-arcade text-xl font-black text-yellow-300">0</div>
           </div>
         </div>
 
-        <!-- ルーム番号入力バー -->
-        <div class="flex items-center gap-1.5 bg-black/40 px-3 py-1.5 rounded-xl border border-white/15 text-xs">
-          <span class="text-indigo-200 font-bold shrink-0">ROOM番号:</span>
-          <input id="manual-room-input" type="text" maxlength="6" placeholder="4桁コード"
-            class="bg-indigo-950 text-yellow-300 font-arcade font-bold px-2 py-1 rounded-lg border border-indigo-600 w-24 text-center uppercase" />
-          <button onclick="connectToManualRoom()" class="arcade-btn bg-pink-500 hover:bg-pink-400 text-white font-black px-3 py-1 rounded-lg text-xs ml-auto">
-            同期する
-          </button>
+        <div class="flex items-center gap-1 bg-black/40 px-2 py-1 rounded-xl border border-white/15 text-xs">
+          <span class="text-indigo-200 font-bold text-[11px] shrink-0">ROOM:</span>
+          <input id="manual-room-input" type="text" maxlength="6" placeholder="4桁"
+            class="bg-indigo-950 text-yellow-300 font-arcade font-bold px-2 py-0.5 rounded border border-indigo-600 w-20 text-center uppercase text-xs" />
+          <button onclick="connectToManualRoom()" class="arcade-btn bg-pink-500 text-white font-black px-2.5 py-0.5 rounded text-xs ml-auto">接続</button>
         </div>
       </div>
 
-      <!-- 中央：アナログスティック ＆ 3大アクションボタン -->
-      <div class="flex-1 flex items-center justify-around py-2 gap-2 relative">
-        <!-- 左：バーチャルアナログスティック -->
+      <!-- 中央：スティック ＆ 記号なしボタン -->
+      <div class="flex-1 flex items-center justify-around py-1 gap-2 relative min-h-[160px]">
         <div class="flex flex-col items-center">
-          <div id="joy-zone" class="w-40 h-40 rounded-full bg-indigo-900/90 border-4 border-pink-400/50 relative flex items-center justify-center shadow-[inset_0_6px_15px_rgba(0,0,0,0.6)] touch-none">
-            <div class="absolute inset-4 rounded-full border-2 border-dashed border-white/20 pointer-events-none"></div>
-            <div id="joy-knob" class="w-16 h-16 rounded-full bg-gradient-to-b from-yellow-300 to-amber-500 border-4 border-white shadow-[0_6px_0_#b45309] pointer-events-none flex items-center justify-center font-black text-slate-900 text-xs">
-              MOVE
+          <div id="joy-zone" class="w-32 h-32 rounded-full bg-indigo-900/90 border-4 border-pink-400/50 relative flex items-center justify-center shadow-[inset_0_4px_10px_rgba(0,0,0,0.6)] touch-none">
+            <div class="absolute inset-3 rounded-full border border-dashed border-white/25 pointer-events-none"></div>
+            <div id="joy-knob" class="w-14 h-14 rounded-full bg-gradient-to-b from-yellow-300 to-amber-500 border-3 border-white shadow-[0_4px_0_#b45309] pointer-events-none flex items-center justify-center font-black text-slate-900 text-[10px]">
+              移動
             </div>
           </div>
-          <span class="text-[11px] text-indigo-200 mt-1.5 font-black">🕹️ スライドして移動</span>
+          <span class="text-[10px] text-indigo-200 mt-1 font-bold">🕹️ ぐりぐり移動</span>
         </div>
 
-        <!-- 右：ゲーセン風でかボタン3つ -->
-        <div class="flex flex-col gap-2.5 items-center">
+        <div class="flex flex-col gap-1.5 items-center">
           <button id="btn-jump"
-            class="arcade-btn w-24 h-12 rounded-2xl bg-gradient-to-b from-emerald-400 to-emerald-600 border-2 border-white flex items-center justify-center gap-1 shadow-lg">
-            <span class="font-arcade font-black text-base text-slate-950">Y</span>
+            class="arcade-btn w-32 h-10 rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-600 border-2 border-white flex items-center justify-center shadow">
             <span class="text-xs font-black text-slate-950">ジャンプ</span>
           </button>
-
-          <div class="flex gap-2.5">
+          <div class="flex gap-1.5">
             <button id="btn-dive"
-              class="arcade-btn w-20 h-20 rounded-full bg-gradient-to-b from-cyan-300 to-blue-600 border-4 border-white flex flex-col items-center justify-center shadow-lg">
-              <span class="font-arcade font-black text-xl text-white leading-none">B</span>
-              <span class="text-[10px] font-black text-white mt-0.5">飛び込み!</span>
+              class="arcade-btn w-16 h-16 rounded-full bg-gradient-to-b from-cyan-300 to-blue-600 border-3 border-white flex flex-col items-center justify-center shadow">
+              <span class="text-[10px] font-black text-white leading-tight">飛び込み</span>
             </button>
-
             <button id="btn-spin"
-              class="arcade-btn w-24 h-24 rounded-full bg-gradient-to-b from-pink-400 to-rose-600 border-4 border-white flex flex-col items-center justify-center shadow-lg">
-              <span class="font-arcade font-black text-2xl text-white leading-none">A</span>
-              <span class="text-[11px] font-black text-yellow-200 mt-0.5">回転アタック</span>
-              <span id="spin-cd-text" class="text-[9px] text-white/90 font-bold">READY!</span>
+              class="arcade-btn w-20 h-20 rounded-full bg-gradient-to-b from-pink-400 to-rose-600 border-3 border-white flex flex-col items-center justify-center shadow">
+              <span class="text-[10px] font-black text-yellow-200 leading-tight">回転アタック</span>
+              <span id="spin-cd-text" class="text-[8px] text-white font-bold">READY</span>
             </button>
           </div>
         </div>
       </div>
 
       <!-- 下部：スタンプ弾幕 -->
-      <div class="space-y-1.5 bg-indigo-900/70 p-2.5 rounded-2xl border border-white/15">
-        <div class="text-[11px] font-black text-yellow-300">💬 大画面へスタンプ弾幕を送る</div>
-        <div class="grid grid-cols-4 gap-1.5">
-          <button onclick="sendReaction('🔥 どけーっ！')" class="arcade-btn bg-indigo-800 hover:bg-indigo-700 py-1.5 rounded-xl text-xs font-black">🔥どけー!</button>
-          <button onclick="sendReaction('👑 王冠よこせ！')" class="arcade-btn bg-indigo-800 hover:bg-indigo-700 py-1.5 rounded-xl text-xs font-black">👑よこせ!</button>
-          <button onclick="sendReaction('😱 落ちるぅぅ！')" class="arcade-btn bg-indigo-800 hover:bg-indigo-700 py-1.5 rounded-xl text-xs font-black">😱落ちる!</button>
-          <button onclick="sendReaction('🤣 わちゃわちゃｗ')" class="arcade-btn bg-indigo-800 hover:bg-indigo-700 py-1.5 rounded-xl text-xs font-black">🤣わちゃｗ</button>
+      <div class="space-y-1 bg-indigo-900/70 p-2 rounded-xl border border-white/15 shrink-0">
+        <div class="text-[10px] font-black text-yellow-300">💬 リアクション弾幕</div>
+        <div class="grid grid-cols-4 gap-1">
+          <button onclick="sendReaction('🔥 どけーっ！')" class="arcade-btn bg-indigo-800 py-1 rounded-lg text-[10px] font-black">🔥どけ!</button>
+          <button onclick="sendReaction('👑 王冠よこせ！')" class="arcade-btn bg-indigo-800 py-1 rounded-lg text-[10px] font-black">👑よこせ</button>
+          <button onclick="sendReaction('😱 落ちるぅぅ！')" class="arcade-btn bg-indigo-800 py-1 rounded-lg text-[10px] font-black">😱落ちる</button>
+          <button onclick="sendReaction('🤣 わちゃわちゃｗ')" class="arcade-btn bg-indigo-800 py-1 rounded-lg text-[10px] font-black">🤣わちゃ</button>
         </div>
       </div>
 
@@ -261,9 +225,6 @@
   </div>
 
   <script>
-    // ============================================================================
-    // 1. ポップで楽しいアーケード効果音シンセサイザー (Web Audio API)
-    // ============================================================================
     let audioCtx = null;
     let soundEnabled = true;
 
@@ -276,10 +237,7 @@
       soundEnabled = !soundEnabled;
       initAudio();
       const btn = document.getElementById('btn-audio');
-      btn.textContent = soundEnabled ? '🔊 音ON' : '🔇 ミュート';
-      btn.className = soundEnabled
-        ? 'arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-black'
-        : 'arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-slate-700 text-slate-300 font-bold';
+      btn.textContent = soundEnabled ? '🔊 音' : '🔇 黙';
     }
 
     function playSound(type) {
@@ -291,60 +249,40 @@
         const gain = audioCtx.createGain();
         osc.connect(gain);
         gain.connect(audioCtx.destination);
-
         if (type === 'boing') {
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(220, now);
+          osc.type = 'sine'; osc.frequency.setValueAtTime(220, now);
           osc.frequency.exponentialRampToValueAtTime(520, now + 0.08);
-          osc.frequency.exponentialRampToValueAtTime(180, now + 0.18);
-          gain.gain.setValueAtTime(0.18, now);
-          gain.gain.linearRampToValueAtTime(0.01, now + 0.18);
+          gain.gain.setValueAtTime(0.18, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.18);
           osc.start(now); osc.stop(now + 0.18);
         } else if (type === 'jump') {
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(260, now);
+          osc.type = 'triangle'; osc.frequency.setValueAtTime(260, now);
           osc.frequency.exponentialRampToValueAtTime(680, now + 0.16);
-          gain.gain.setValueAtTime(0.18, now);
-          gain.gain.linearRampToValueAtTime(0.01, now + 0.16);
+          gain.gain.setValueAtTime(0.18, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.16);
           osc.start(now); osc.stop(now + 0.16);
         } else if (type === 'dive') {
-          osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(500, now);
+          osc.type = 'sawtooth'; osc.frequency.setValueAtTime(500, now);
           osc.frequency.exponentialRampToValueAtTime(150, now + 0.22);
-          gain.gain.setValueAtTime(0.18, now);
-          gain.gain.linearRampToValueAtTime(0.01, now + 0.22);
+          gain.gain.setValueAtTime(0.18, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.22);
           osc.start(now); osc.stop(now + 0.22);
         } else if (type === 'spin') {
-          osc.type = 'square';
-          osc.frequency.setValueAtTime(300, now);
+          osc.type = 'square'; osc.frequency.setValueAtTime(300, now);
           osc.frequency.exponentialRampToValueAtTime(900, now + 0.25);
-          gain.gain.setValueAtTime(0.2, now);
-          gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+          gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
           osc.start(now); osc.stop(now + 0.25);
         } else if (type === 'ko') {
-          osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(440, now);
+          osc.type = 'sawtooth'; osc.frequency.setValueAtTime(440, now);
           osc.frequency.setValueAtTime(587, now + 0.08);
-          osc.frequency.setValueAtTime(880, now + 0.16);
-          gain.gain.setValueAtTime(0.25, now);
-          gain.gain.linearRampToValueAtTime(0.01, now + 0.45);
+          gain.gain.setValueAtTime(0.25, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.45);
           osc.start(now); osc.stop(now + 0.45);
         } else if (type === 'crown') {
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(523, now);
-          osc.frequency.setValueAtTime(659, now + 0.07);
+          osc.type = 'triangle'; osc.frequency.setValueAtTime(523, now);
           osc.frequency.setValueAtTime(784, now + 0.14);
-          osc.frequency.setValueAtTime(1046, now + 0.21);
-          gain.gain.setValueAtTime(0.22, now);
-          gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+          gain.gain.setValueAtTime(0.22, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
           osc.start(now); osc.stop(now + 0.4);
         }
       } catch (e) {}
     }
 
-    // ============================================================================
-    // 2. ネットワーク変数
-    // ============================================================================
     const urlParams = new URLSearchParams(window.location.search);
     const roomParam = urlParams.get('room');
     let currentMode = roomParam ? 'controller' : 'host';
@@ -355,24 +293,24 @@
     let mqttTopicHost = '';
     let mqttTopicState = '';
     let packetsCount = 0;
-    let ppsValue = 0;
     let packetVisuals = [];
 
     const POP_COLORS = ['#ff477e', '#00f5d4', '#fee440', '#9b5de5', '#f15bb5', '#00bbf9', '#ff9f1c', '#38b000'];
     const POP_FACES = ['😆', '😎', '🤩', '😈', '🥳', '🤖', '🐱', '🦊'];
 
-    // ============================================================================
-    // 3. Three.js フル3Dステージ ＆ Blender (.glb) ローダー
-    // ============================================================================
+    // Three.js ステージ設定（広さを拡大：stageRadius = 36）
     let scene, camera, renderer, gltfLoader;
-    let stageRadius = 25;
+    let stageRadius = 36;
     let platformGroup, sweeperBarGroup, crownMesh;
     let customBlenderModelTemplate = null;
+
+    // スマホ用ミニ俯瞰プレビュー用
+    let miniScene, miniCamera, miniRenderer;
 
     const players = {};
     const candies = [];
     let crownState = { holderId: null, x: 0, z: 0, angle: 0 };
-    let sweeperState = { active: false, angle: 0, speed: 0.032 };
+    let sweeperState = { active: false, angle: 0, speed: 0.028 };
     let eventCountdown = 20;
 
     function initThreeStage() {
@@ -382,10 +320,10 @@
 
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0x1a103c);
-      scene.fog = new THREE.FogExp2(0x1a103c, 0.008);
+      scene.fog = new THREE.FogExp2(0x1a103c, 0.006);
 
-      camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 300);
-      camera.position.set(0, 32, 40);
+      camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 350);
+      camera.position.set(0, 42, 52);
       camera.lookAt(0, 0, 2);
 
       renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -396,9 +334,8 @@
 
       const hemiLight = new THREE.HemisphereLight(0xffffff, 0x4c1d95, 0.95);
       scene.add(hemiLight);
-
       const dirLight = new THREE.DirectionalLight(0xfffbeb, 0.9);
-      dirLight.position.set(25, 45, 25);
+      dirLight.position.set(30, 50, 30);
       dirLight.castShadow = true;
       scene.add(dirLight);
 
@@ -413,14 +350,15 @@
       sweeperBarGroup.visible = false;
       scene.add(sweeperBarGroup);
 
-      for (let i = 0; i < 14; i++) {
-        spawnCandy();
-      }
+      for (let i = 0; i < 16; i++) spawnCandy();
 
       if (THREE.GLTFLoader) {
         gltfLoader = new THREE.GLTFLoader();
         tryAutoLoadCharacterGLB();
       }
+
+      // スマホ用ミニビューの初期化
+      initMiniPreview();
 
       window.addEventListener('resize', () => {
         if (!container.clientWidth || !container.clientHeight) return;
@@ -430,10 +368,30 @@
       });
     }
 
+    function initMiniPreview() {
+      const previewBox = document.getElementById('mini-preview-container');
+      if (!previewBox) return;
+      const w = previewBox.clientWidth || 360;
+      const h = previewBox.clientHeight || 128;
+
+      miniScene = new THREE.Scene();
+      miniScene.background = new THREE.Color(0x0f0c1b);
+
+      miniCamera = new THREE.PerspectiveCamera(50, w / h, 0.1, 200);
+
+      miniRenderer = new THREE.WebGLRenderer({ antialias: true });
+      miniRenderer.setSize(w, h);
+      miniRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      previewBox.appendChild(miniRenderer.domElement);
+
+      const light = new THREE.HemisphereLight(0xffffff, 0x333333, 1.0);
+      miniScene.add(light);
+    }
+
     function buildPopArenaStage() {
       while (platformGroup.children.length) platformGroup.remove(platformGroup.children[0]);
 
-      const cylGeo = new THREE.CylinderGeometry(stageRadius, stageRadius * 0.92, 3, 48);
+      const cylGeo = new THREE.CylinderGeometry(stageRadius, stageRadius * 0.94, 3, 48);
       const cylMat = new THREE.MeshStandardMaterial({ color: 0x3b0764, roughness: 0.4, metalness: 0.1 });
       const floor = new THREE.Mesh(cylGeo, cylMat);
       floor.position.y = -1.5;
@@ -442,8 +400,8 @@
 
       const ringColors = [0xf43f5e, 0xfacc15, 0x06b6d4, 0xa855f7];
       ringColors.forEach((col, idx) => {
-        const rInner = idx * 6;
-        const rOuter = rInner + 5.5;
+        const rInner = idx * 8;
+        const rOuter = rInner + 7.5;
         if (rOuter <= stageRadius) {
           const ringGeo = new THREE.RingGeometry(rInner, rOuter, 48);
           ringGeo.rotateX(-Math.PI / 2);
@@ -456,67 +414,39 @@
 
       const edgeGeo = new THREE.TorusGeometry(stageRadius, 0.45, 16, 64);
       edgeGeo.rotateX(Math.PI / 2);
-      const edgeMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
-      const edge = new THREE.Mesh(edgeGeo, edgeMat);
+      const edge = new THREE.Mesh(edgeGeo, new THREE.MeshBasicMaterial({ color: 0xfacc15 }));
       platformGroup.add(edge);
-
-      for (let i = 0; i < 12; i++) {
-        const ang = (i / 12) * Math.PI * 2;
-        const decoGeo = new THREE.OctahedronGeometry(1.5, 0);
-        const decoMat = new THREE.MeshStandardMaterial({ color: ringColors[i % 4], roughness: 0.2 });
-        const deco = new THREE.Mesh(decoGeo, decoMat);
-        deco.position.set(Math.cos(ang) * (stageRadius + 8), Math.sin(i * 2) * 3 - 2, Math.sin(ang) * (stageRadius + 8));
-        platformGroup.add(deco);
-      }
     }
 
     function createCrownMesh() {
       const group = new THREE.Group();
-      const baseGeo = new THREE.CylinderGeometry(1.1, 0.85, 0.9, 8);
-      const goldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xd97706, emissiveIntensity: 0.4, metalness: 0.6, roughness: 0.2 });
-      const base = new THREE.Mesh(baseGeo, goldMat);
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 0.85, 0.9, 8), new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xd97706, metalness: 0.6, roughness: 0.2 }));
       group.add(base);
-
-      const gemGeo = new THREE.SphereGeometry(0.32, 8, 8);
-      const gemMat = new THREE.MeshBasicMaterial({ color: 0xf43f5e });
-      const gem = new THREE.Mesh(gemGeo, gemMat);
+      const gem = new THREE.Mesh(new THREE.SphereGeometry(0.32, 8, 8), new THREE.MeshBasicMaterial({ color: 0xf43f5e }));
       gem.position.y = 0.55;
       group.add(gem);
-
       group.position.set(0, 1.2, 0);
       return group;
     }
 
     function createSweeperBar() {
       const group = new THREE.Group();
-      const postGeo = new THREE.CylinderGeometry(1.6, 1.8, 3.2, 16);
-      const postMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.3 });
-      const post = new THREE.Mesh(postGeo, postMat);
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.8, 3.2, 16), new THREE.MeshStandardMaterial({ color: 0xfacc15 }));
       post.position.y = 1.6;
       group.add(post);
-
-      const barGeo = new THREE.CylinderGeometry(0.65, 0.65, stageRadius * 1.85, 16);
-      barGeo.rotateZ(Math.PI / 2);
-      const barMat = new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0xbe123c, emissiveIntensity: 0.3 });
-      const bar = new THREE.Mesh(barGeo, barMat);
+      const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, stageRadius * 1.85, 16), new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0xbe123c }));
+      bar.rotateZ(Math.PI / 2);
       bar.position.y = 1.1;
       group.add(bar);
-
       return group;
     }
 
-    // ============================================================================
-    // 4. 二頭身キャラクター生成 ＆ Blender (.glb) 切り替え
-    // ============================================================================
     function createChibiCharacterMesh(colorHex) {
       const root = new THREE.Group();
-
       if (customBlenderModelTemplate) {
         const cloned = customBlenderModelTemplate.clone();
-        const colorRingGeo = new THREE.RingGeometry(1.1, 1.45, 24);
-        colorRingGeo.rotateX(-Math.PI / 2);
-        const colorRingMat = new THREE.MeshBasicMaterial({ color: colorHex, side: THREE.DoubleSide });
-        const ring = new THREE.Mesh(colorRingGeo, colorRingMat);
+        const ring = new THREE.Mesh(new THREE.RingGeometry(1.1, 1.45, 24), new THREE.MeshBasicMaterial({ color: colorHex, side: THREE.DoubleSide }));
+        ring.rotateX(-Math.PI / 2);
         ring.position.y = 0.05;
         root.add(ring);
         root.add(cloned);
@@ -526,59 +456,39 @@
 
       const bodyGroup = new THREE.Group();
       root.add(bodyGroup);
-
-      const mainMat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.35, metalness: 0.05 });
+      const mainMat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.35 });
       const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
       const darkMat = new THREE.MeshBasicMaterial({ color: 0x111827 });
 
-      const torsoGeo = new THREE.SphereGeometry(0.95, 18, 16);
-      torsoGeo.scale(1, 1.1, 0.9);
-      const torso = new THREE.Mesh(torsoGeo, mainMat);
-      torso.position.y = 1.1;
-      torso.castShadow = true;
+      const torso = new THREE.Mesh(new THREE.SphereGeometry(0.95, 18, 16), mainMat);
+      torso.scale.set(1, 1.1, 0.9); torso.position.y = 1.1; torso.castShadow = true;
       bodyGroup.add(torso);
 
-      const headGeo = new THREE.SphereGeometry(0.85, 18, 16);
-      const head = new THREE.Mesh(headGeo, mainMat);
-      head.position.y = 2.35;
-      head.castShadow = true;
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.85, 18, 16), mainMat);
+      head.position.y = 2.35; head.castShadow = true;
       bodyGroup.add(head);
 
-      const faceGeo = new THREE.SphereGeometry(0.62, 16, 12);
-      faceGeo.scale(1.05, 0.75, 0.5);
-      const face = new THREE.Mesh(faceGeo, whiteMat);
-      face.position.set(0, 2.38, 0.52);
+      const face = new THREE.Mesh(new THREE.SphereGeometry(0.62, 16, 12), whiteMat);
+      face.scale.set(1.05, 0.75, 0.5); face.position.set(0, 2.38, 0.52);
       bodyGroup.add(face);
 
-      const eyeGeo = new THREE.SphereGeometry(0.13, 8, 8);
-      eyeGeo.scale(1, 1.4, 0.6);
-      const eyeL = new THREE.Mesh(eyeGeo, darkMat);
-      eyeL.position.set(-0.22, 2.42, 0.75);
-      const eyeR = new THREE.Mesh(eyeGeo, darkMat);
-      eyeR.position.set(0.22, 2.42, 0.75);
+      const eyeGeo = new THREE.SphereGeometry(0.13, 8, 8); eyeGeo.scale(1, 1.4, 0.6);
+      const eyeL = new THREE.Mesh(eyeGeo, darkMat); eyeL.position.set(-0.22, 2.42, 0.75);
+      const eyeR = new THREE.Mesh(eyeGeo, darkMat); eyeR.position.set(0.22, 2.42, 0.75);
       bodyGroup.add(eyeL, eyeR);
 
-      const armGeo = new THREE.SphereGeometry(0.32, 10, 10);
-      armGeo.scale(0.8, 1.6, 0.8);
-      const armL = new THREE.Mesh(armGeo, mainMat);
-      armL.position.set(-1.05, 1.35, 0);
-      const armR = new THREE.Mesh(armGeo, mainMat);
-      armR.position.set(1.05, 1.35, 0);
+      const armGeo = new THREE.SphereGeometry(0.32, 10, 10); armGeo.scale(0.8, 1.6, 0.8);
+      const armL = new THREE.Mesh(armGeo, mainMat); armL.position.set(-1.05, 1.35, 0);
+      const armR = new THREE.Mesh(armGeo, mainMat); armR.position.set(1.05, 1.35, 0);
       bodyGroup.add(armL, armR);
 
-      const legGeo = new THREE.SphereGeometry(0.35, 10, 10);
-      legGeo.scale(0.9, 1.3, 1.2);
-      const legL = new THREE.Mesh(legGeo, whiteMat);
-      legL.position.set(-0.42, 0.35, 0);
-      const legR = new THREE.Mesh(legGeo, whiteMat);
-      legR.position.set(0.42, 0.35, 0);
+      const legGeo = new THREE.SphereGeometry(0.35, 10, 10); legGeo.scale(0.9, 1.3, 1.2);
+      const legL = new THREE.Mesh(legGeo, whiteMat); legL.position.set(-0.42, 0.35, 0);
+      const legR = new THREE.Mesh(legGeo, whiteMat); legR.position.set(0.42, 0.35, 0);
       bodyGroup.add(legL, legR);
 
-      const ringGeo = new THREE.RingGeometry(1.1, 1.35, 24);
-      ringGeo.rotateX(-Math.PI / 2);
-      const ringMat = new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.75, side: THREE.DoubleSide });
-      const ring = new THREE.Mesh(ringGeo, ringMat);
-      ring.position.y = 0.05;
+      const ring = new THREE.Mesh(new THREE.RingGeometry(1.1, 1.35, 24), new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.75, side: THREE.DoubleSide }));
+      ring.rotateX(-Math.PI / 2); ring.position.y = 0.05;
       root.add(ring);
 
       root.userData = { isCustomGLB: false, bodyGroup, armL, armR, legL, legR, head };
@@ -586,12 +496,7 @@
     }
 
     function tryAutoLoadCharacterGLB() {
-      gltfLoader.load(
-        './character.glb',
-        (gltf) => applyLoadedGLBModel(gltf.scene, 'character.glb'),
-        undefined,
-        () => {}
-      );
+      gltfLoader.load('./character.glb', (gltf) => applyLoadedGLBModel(gltf.scene, 'character.glb'), undefined, () => {});
     }
 
     function handleLocalGLBUpload(event) {
@@ -599,24 +504,17 @@
       if (!file || !gltfLoader) return;
       const reader = new FileReader();
       reader.onload = function(e) {
-        gltfLoader.parse(e.target.result, '', (gltf) => {
-          applyLoadedGLBModel(gltf.scene, file.name);
-        });
+        gltfLoader.parse(e.target.result, '', (gltf) => applyLoadedGLBModel(gltf.scene, file.name));
       };
       reader.readAsArrayBuffer(file);
     }
 
     function applyLoadedGLBModel(gltfScene, fileName) {
       const box = new THREE.Box3().setFromObject(gltfScene);
-      const size = new THREE.Vector3();
-      box.getSize(size);
-      const maxDim = Math.max(size.x, size.y, size.z) || 1;
-      const scale = 2.8 / maxDim;
+      const size = new THREE.Vector3(); box.getSize(size);
+      const scale = 2.8 / (Math.max(size.x, size.y, size.z) || 1);
       gltfScene.scale.set(scale, scale, scale);
-
-      const box2 = new THREE.Box3().setFromObject(gltfScene);
-      gltfScene.position.y = -box2.min.y;
-
+      gltfScene.position.y = -new THREE.Box3().setFromObject(gltfScene).min.y;
       customBlenderModelTemplate = gltfScene;
 
       Object.values(players).forEach(p => {
@@ -624,28 +522,20 @@
         p.mesh = createChibiCharacterMesh(p.color);
         scene.add(p.mesh);
       });
-
       spawnDanmaku(`🎉 3Dモデル「${fileName}」を適用しました！`, '#facc15');
       playSound('crown');
     }
 
     function spawnCandy() {
-      const colors = [0xff477e, 0x00f5d4, 0xfee440, 0xa855f7];
-      const col = colors[Math.floor(Math.random() * colors.length)];
-      const geo = new THREE.OctahedronGeometry(0.65, 1);
-      const mat = new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.35, roughness: 0.2 });
-      const mesh = new THREE.Mesh(geo, mat);
-
+      const col = [0xff477e, 0x00f5d4, 0xfee440, 0xa855f7][Math.floor(Math.random() * 4)];
+      const mesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.65, 1), new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.35 }));
       const ang = Math.random() * Math.PI * 2;
-      const rad = 4 + Math.random() * (stageRadius - 6);
+      const rad = 5 + Math.random() * (stageRadius - 8);
       mesh.position.set(Math.cos(ang) * rad, 0.8, Math.sin(ang) * rad);
       scene.add(mesh);
       candies.push({ mesh, phase: Math.random() * 6 });
     }
 
-    // ============================================================================
-    // 5. プレイヤー管理 ＆ AI CPUの増減機能（追加・削除・全消去）
-    // ============================================================================
     function ensurePlayer(id, name, isBot = false) {
       if (players[id]) {
         if (name) players[id].name = name;
@@ -657,79 +547,47 @@
       const mesh = createChibiCharacterMesh(color);
 
       const ang = Math.random() * Math.PI * 2;
-      const rad = 3 + Math.random() * 7;
+      const rad = 4 + Math.random() * 10;
       const sx = Math.cos(ang) * rad;
       const sz = Math.sin(ang) * rad;
       mesh.position.set(sx, 8, sz);
       scene.add(mesh);
 
       players[id] = {
-        id,
-        name: name || `P${idx + 1}`,
-        face,
-        color,
-        isBot,
-        mesh,
-        x: sx, y: 8, z: sz,
-        vx: 0, vy: 0, vz: 0,
-        joyX: 0, joyY: 0,
-        angle: 0,
-        walkCycle: 0,
-        score: 0,
-        spinCd: 0,
-        diveTimer: 0,
-        spinAnimTimer: 0,
-        botDecisionTimer: 0,
-        lastHitBy: null
+        id, name: name || `P${idx + 1}`, face, color, isBot, mesh,
+        x: sx, y: 8, z: sz, vx: 0, vy: 0, vz: 0, joyX: 0, joyY: 0,
+        angle: 0, walkCycle: 0, score: 0, spinCd: 0, diveTimer: 0, spinAnimTimer: 0, botDecisionTimer: 0, lastHitBy: null
       };
       updateRankingUI();
       updateBotCountUI();
       return players[id];
     }
 
-    // AI CPUを1体増やす
     function spawnBot() {
       const botNames = ['ぷにロボ', 'モチまる', 'コロ助', 'ピコ太郎', 'ネジくん', 'タマちゃん', 'メカっち', 'ゴロリ'];
       const id = 'bot_' + Math.random().toString(36).substring(2, 7);
       const botList = Object.values(players).filter(p => p.isBot);
-      const name = botNames[botList.length % botNames.length] + (botList.length + 1);
-      ensurePlayer(id, name, true);
+      ensurePlayer(id, botNames[botList.length % botNames.length] + (botList.length + 1), true);
       playSound('jump');
     }
 
-    // AI CPUを1体減らす
     function removeBot() {
       const botIds = Object.keys(players).filter(id => players[id].isBot);
       if (botIds.length === 0) return;
       const targetId = botIds[botIds.length - 1];
-      const target = players[targetId];
-      if (crownState.holderId === targetId) {
-        crownState.holderId = null;
-        crownState.x = 0;
-        crownState.z = 0;
-      }
-      scene.remove(target.mesh);
+      if (crownState.holderId === targetId) { crownState.holderId = null; crownState.x = 0; crownState.z = 0; }
+      scene.remove(players[targetId].mesh);
       delete players[targetId];
-      updateRankingUI();
-      updateBotCountUI();
-      playSound('boing');
+      updateRankingUI(); updateBotCountUI(); playSound('boing');
     }
 
-    // AI CPUをすべて消して0体にする
     function clearBots() {
-      const botIds = Object.keys(players).filter(id => players[id].isBot);
-      botIds.forEach(id => {
-        if (crownState.holderId === id) {
-          crownState.holderId = null;
-          crownState.x = 0;
-          crownState.z = 0;
-        }
+      Object.keys(players).filter(id => players[id].isBot).forEach(id => {
+        if (crownState.holderId === id) { crownState.holderId = null; crownState.x = 0; crownState.z = 0; }
         scene.remove(players[id].mesh);
         delete players[id];
       });
-      updateRankingUI();
-      updateBotCountUI();
-      playSound('boing');
+      updateRankingUI(); updateBotCountUI(); playSound('boing');
     }
 
     function updateBotCountUI() {
@@ -738,12 +596,8 @@
       if (badge) badge.textContent = `${count}体`;
     }
 
-    // アクション処理
     function doJump(p) {
-      if (p.y <= 0.15) {
-        p.vy = 0.62;
-        playSound('jump');
-      }
+      if (p.y <= 0.15) { p.vy = 0.58; playSound('jump'); }
     }
 
     function doDive(p) {
@@ -751,50 +605,33 @@
       const dirX = Math.abs(p.joyX) + Math.abs(p.joyY) > 0.1 ? p.joyX : Math.sin(p.angle);
       const dirZ = Math.abs(p.joyX) + Math.abs(p.joyY) > 0.1 ? p.joyY : Math.cos(p.angle);
       const len = Math.hypot(dirX, dirZ) || 1;
-      p.vx += (dirX / len) * 1.15;
-      p.vz += (dirZ / len) * 1.15;
-      if (p.y <= 0.2) p.vy = 0.32;
-      p.diveTimer = 22;
-      playSound('dive');
+      p.vx += (dirX / len) * 1.05; p.vz += (dirZ / len) * 1.05;
+      if (p.y <= 0.2) p.vy = 0.28;
+      p.diveTimer = 22; playSound('dive');
     }
 
     function doSpinAttack(p) {
       if (p.spinCd > 0) return;
-      p.spinCd = 130;
-      p.spinAnimTimer = 25;
-      playSound('spin');
+      p.spinCd = 120; p.spinAnimTimer = 25; playSound('spin');
 
-      const ringGeo = new THREE.RingGeometry(0.8, 1.5, 32);
-      ringGeo.rotateX(-Math.PI / 2);
-      const ringMat = new THREE.MeshBasicMaterial({ color: p.color, transparent: true, opacity: 0.9, side: THREE.DoubleSide });
-      const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+      const ringMesh = new THREE.Mesh(new THREE.RingGeometry(0.8, 1.5, 32).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: p.color, transparent: true, opacity: 0.9, side: THREE.DoubleSide }));
       ringMesh.position.set(p.x, p.y + 0.6, p.z);
       scene.add(ringMesh);
-
       let f = 0;
       const anim = setInterval(() => {
-        f++;
-        ringMesh.scale.setScalar(1 + f * 0.65);
-        ringMat.opacity = 1 - f / 14;
-        if (f >= 14) {
-          clearInterval(anim);
-          scene.remove(ringMesh);
-        }
+        f++; ringMesh.scale.setScalar(1 + f * 0.65); ringMesh.material.opacity = 1 - f / 14;
+        if (f >= 14) { clearInterval(anim); scene.remove(ringMesh); }
       }, 16);
 
-      const powerMult = crownState.holderId === p.id ? 1.45 : 1.0;
+      const powerMult = crownState.holderId === p.id ? 1.4 : 1.0;
       Object.values(players).forEach(other => {
         if (other.id === p.id) return;
-        const dx = other.x - p.x;
-        const dz = other.z - p.z;
-        const dist = Math.hypot(dx, dz);
+        const dx = other.x - p.x, dz = other.z - p.z, dist = Math.hypot(dx, dz);
         if (dist < 8.5 && dist > 0.01) {
-          const force = ((8.5 - dist) / 8.5) * 1.45 * powerMult;
-          other.vx += (dx / dist) * force;
-          other.vz += (dz / dist) * force;
-          other.vy = 0.42;
+          const force = ((8.5 - dist) / 8.5) * 1.35 * powerMult;
+          other.vx += (dx / dist) * force; other.vz += (dz / dist) * force; other.vy = 0.38;
           other.lastHitBy = p.id;
-          showFloatingText(other.x, other.y + 2, other.z, '💥 SPIN HIT!', '#facc15');
+          showFloatingText(other.x, other.y + 2, other.z, '💥 HIT!', '#facc15');
         }
       });
     }
@@ -806,24 +643,20 @@
       const statusEl = document.getElementById('stage-status');
 
       if (sweeperState.active) {
-        statusEl.textContent = '⚠️ 回転ハンマーバー稼働中！ジャンプで飛び越えろ！';
-        banner.textContent = '⚠️ 巨大回転ハンマー出現！！ジャンプ(Y)で飛び越えろ！';
-        banner.classList.remove('hidden');
-        setTimeout(() => banner.classList.add('hidden'), 4000);
+        statusEl.textContent = '⚠️ 回転ハンマーバー稼働中！ジャンプで回避！';
+        banner.textContent = '⚠️ 回転ハンマー出現！ジャンプで飛び越えろ！';
+        banner.classList.remove('hidden'); setTimeout(() => banner.classList.add('hidden'), 4000);
         playSound('ko');
       } else {
         statusEl.textContent = '👑 中央の「王冠」を奪い合え！';
         for (let i = 0; i < 6; i++) spawnCandy();
-        banner.textContent = '🍬 キャンディボーナス大量出現！！';
-        banner.classList.remove('hidden');
-        setTimeout(() => banner.classList.add('hidden'), 3500);
+        banner.textContent = '🍬 キャンディボーナス大量出現！';
+        banner.classList.remove('hidden'); setTimeout(() => banner.classList.add('hidden'), 3500);
         playSound('crown');
       }
     }
 
-    // ============================================================================
-    // 6. メイン物理ループ
-    // ============================================================================
+    // 物理演算（移動スピードとステージ広さのバランスを適正化）
     function updateGamePhysics() {
       const pList = Object.values(players);
 
@@ -848,171 +681,109 @@
         if (p.diveTimer > 0) p.diveTimer--;
         if (p.spinAnimTimer > 0) p.spinAnimTimer--;
 
-        // AI CPUの判断ロジック
         if (p.isBot) {
           p.botDecisionTimer--;
           if (p.botDecisionTimer <= 0) {
-            p.botDecisionTimer = 18 + Math.floor(Math.random() * 25);
+            p.botDecisionTimer = 22 + Math.floor(Math.random() * 25);
             const distCenter = Math.hypot(p.x, p.z);
-            if (distCenter > stageRadius * 0.68) {
-              p.joyX = -p.x / distCenter;
-              p.joyY = -p.z / distCenter;
-              if (Math.random() < 0.5) doDive(p);
+            if (distCenter > stageRadius * 0.75) {
+              p.joyX = -p.x / distCenter; p.joyY = -p.z / distCenter;
             } else if (!crownState.holderId) {
-              const dx = crownState.x - p.x;
-              const dz = crownState.z - p.z;
-              const d = Math.hypot(dx, dz) || 1;
-              p.joyX = dx / d;
-              p.joyY = dz / d;
+              const dx = crownState.x - p.x, dz = crownState.z - p.z, d = Math.hypot(dx, dz) || 1;
+              p.joyX = dx / d; p.joyY = dz / d;
             } else {
               const others = pList.filter(o => o.id !== p.id);
               if (others.length > 0) {
                 const target = others[Math.floor(Math.random() * others.length)];
-                const dx = target.x - p.x;
-                const dz = target.z - p.z;
-                const d = Math.hypot(dx, dz) || 1;
-                p.joyX = dx / d;
-                p.joyY = dz / d;
-                if (d < 5.5 && Math.random() < 0.45) doSpinAttack(p);
-                else if (d < 8 && Math.random() < 0.35) doDive(p);
+                const dx = target.x - p.x, dz = target.z - p.z, d = Math.hypot(dx, dz) || 1;
+                p.joyX = dx / d; p.joyY = dz / d;
+                if (d < 5 && Math.random() < 0.4) doSpinAttack(p);
               }
             }
           }
-          if (sweeperState.active && p.y <= 0.1 && Math.random() < 0.04) doJump(p);
+          if (sweeperState.active && p.y <= 0.1 && Math.random() < 0.035) doJump(p);
         }
 
-        const moveAccel = crownState.holderId === p.id ? 0.052 : 0.045;
-        p.vx += p.joyX * moveAccel;
-        p.vz += p.joyY * moveAccel;
-
-        p.x += p.vx;
-        p.z += p.vz;
-        p.vx *= 0.87;
-        p.vz *= 0.87;
+        // 操作性の向上（適度な加速とブレーキ感）
+        const moveAccel = crownState.holderId === p.id ? 0.045 : 0.038;
+        p.vx += p.joyX * moveAccel; p.vz += p.joyY * moveAccel;
+        p.x += p.vx; p.z += p.vz;
+        p.vx *= 0.84; p.vz *= 0.84; // 摩擦を少し強めて操作しやすく
 
         const distFromCenter = Math.hypot(p.x, p.z);
-        if (distFromCenter <= stageRadius + 0.7 && p.y >= -0.4) {
+        if (distFromCenter <= stageRadius + 0.8 && p.y >= -0.4) {
           p.y += p.vy;
-          if (p.y > 0) {
-            p.vy -= 0.032;
-          } else {
-            p.y = 0;
-            p.vy = 0;
-          }
+          if (p.y > 0) p.vy -= 0.03; else { p.y = 0; p.vy = 0; }
         } else {
-          p.y += p.vy;
-          p.vy -= 0.048;
+          p.y += p.vy; p.vy -= 0.045;
         }
 
-        const targetScale = crownState.holderId === p.id ? 1.32 : 1.0;
+        const targetScale = crownState.holderId === p.id ? 1.3 : 1.0;
         p.mesh.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1);
 
         const speed = Math.hypot(p.vx, p.vz);
-        if (speed > 0.02) {
-          p.angle = Math.atan2(p.vx, p.vz);
-          p.walkCycle += speed * 2.2;
-        }
-
+        if (speed > 0.02) { p.angle = Math.atan2(p.vx, p.vz); p.walkCycle += speed * 2.2; }
         p.mesh.position.set(p.x, p.y, p.z);
 
         const ud = p.mesh.userData;
-        if (p.spinAnimTimer > 0) {
-          p.mesh.rotation.y += 0.65;
-        } else {
-          p.mesh.rotation.y = p.angle;
-        }
+        if (p.spinAnimTimer > 0) { p.mesh.rotation.y += 0.65; } else { p.mesh.rotation.y = p.angle; }
 
         if (ud && !ud.isCustomGLB && ud.bodyGroup) {
           if (p.diveTimer > 0) {
-            ud.bodyGroup.rotation.x = Math.PI / 2.2;
-            ud.bodyGroup.position.y = 0.6;
+            ud.bodyGroup.rotation.x = Math.PI / 2.2; ud.bodyGroup.position.y = 0.6;
           } else {
             ud.bodyGroup.rotation.x = Math.min(0.35, speed * 0.7);
             ud.bodyGroup.position.y = Math.abs(Math.sin(p.walkCycle)) * 0.22;
             const swing = Math.sin(p.walkCycle) * Math.min(0.9, speed * 3.5);
-            ud.armL.rotation.x = swing;
-            ud.armR.rotation.x = -swing;
-            ud.legL.rotation.x = -swing;
-            ud.legR.rotation.x = swing;
+            ud.armL.rotation.x = swing; ud.armR.rotation.x = -swing;
+            ud.legL.rotation.x = -swing; ud.legR.rotation.x = swing;
           }
         }
 
         if (!crownState.holderId && p.y >= 0 && Math.hypot(p.x - crownState.x, p.z - crownState.z) < 2.2) {
-          crownState.holderId = p.id;
-          p.score += 100;
-          playSound('crown');
+          crownState.holderId = p.id; p.score += 100; playSound('crown');
           showFloatingText(p.x, p.y + 3, p.z, '👑 CROWN GET! +100', '#facc15');
-          spawnDanmaku(`👑 ${p.name} が黄金の王冠を奪取して巨大化！！`, '#facc15');
+          spawnDanmaku(`👑 ${p.name} が王冠奪取！`, '#facc15');
           updateRankingUI();
         }
 
         if (sweeperState.active && p.y < 1.5 && distFromCenter < stageRadius * 0.92) {
-          const barCos = Math.cos(-sweeperState.angle);
-          const barSin = Math.sin(-sweeperState.angle);
-          const perpDist = Math.abs(p.x * barSin + p.z * barCos);
-          if (perpDist < 1.35) {
-            p.vx += -barSin * 1.1;
-            p.vz += -barCos * 1.1;
-            p.vy = 0.45;
-            playSound('boing');
-            showFloatingText(p.x, p.y + 2, p.z, '💥 HAMMER HIT!', '#f43f5e');
+          const barCos = Math.cos(-sweeperState.angle), barSin = Math.sin(-sweeperState.angle);
+          if (Math.abs(p.x * barSin + p.z * barCos) < 1.35) {
+            p.vx += -barSin * 1.0; p.vz += -barCos * 1.0; p.vy = 0.42;
+            playSound('boing'); showFloatingText(p.x, p.y + 2, p.z, '💥 HAMMER!', '#f43f5e');
           }
         }
 
-        if (p.y < -11) {
-          handlePlayerRingOut(p);
-        }
+        if (p.y < -11) handlePlayerRingOut(p);
       });
 
-      // 押し合い衝突判定
+      // 押し合い判定
       for (let i = 0; i < pList.length; i++) {
         for (let j = i + 1; j < pList.length; j++) {
-          const a = pList[i];
-          const b = pList[j];
+          const a = pList[i], b = pList[j];
           if (Math.abs(a.y - b.y) > 2.2) continue;
-
-          const dx = b.x - a.x;
-          const dz = b.z - a.z;
-          const dist = Math.hypot(dx, dz);
-          const minDist = (crownState.holderId === a.id || crownState.holderId === b.id) ? 2.6 : 2.15;
-
+          const dx = b.x - a.x, dz = b.z - a.z, dist = Math.hypot(dx, dz);
+          const minDist = 2.2;
           if (dist < minDist && dist > 0.001) {
-            const nx = dx / dist;
-            const nz = dz / dist;
-            const overlap = minDist - dist;
-
-            a.x -= nx * overlap * 0.5;
-            a.z -= nz * overlap * 0.5;
-            b.x += nx * overlap * 0.5;
-            b.z += nz * overlap * 0.5;
-
-            const aPower = (a.diveTimer > 0 ? 1.6 : 1.0) * (crownState.holderId === a.id ? 1.4 : 1.0);
-            const bPower = (b.diveTimer > 0 ? 1.6 : 1.0) * (crownState.holderId === b.id ? 1.4 : 1.0);
-            const bounce = 0.36;
-
-            a.vx -= nx * bounce * bPower;
-            a.vz -= nz * bounce * bPower;
-            b.vx += nx * bounce * aPower;
-            b.vz += nz * bounce * aPower;
-
-            a.lastHitBy = b.id;
-            b.lastHitBy = a.id;
-            playSound('boing');
+            const nx = dx / dist, nz = dz / dist, overlap = minDist - dist;
+            a.x -= nx * overlap * 0.5; a.z -= nz * overlap * 0.5;
+            b.x += nx * overlap * 0.5; b.z += nz * overlap * 0.5;
+            const bounce = 0.32;
+            a.vx -= nx * bounce; a.vz -= nz * bounce;
+            b.vx += nx * bounce; b.vz += nz * bounce;
+            a.lastHitBy = b.id; b.lastHitBy = a.id; playSound('boing');
           }
         }
       }
 
       candies.forEach(c => {
-        c.phase += 0.07;
-        c.mesh.rotation.y += 0.05;
+        c.phase += 0.07; c.mesh.rotation.y += 0.05;
         c.mesh.position.y = 0.8 + Math.sin(c.phase) * 0.25;
-
         pList.forEach(p => {
           if (p.y >= -0.2 && Math.hypot(p.x - c.mesh.position.x, p.z - c.mesh.position.z) < 1.9) {
-            p.score += 20;
-            showFloatingText(p.x, p.y + 2, p.z, '+20 🍬', '#00f5d4');
-            const ang = Math.random() * Math.PI * 2;
-            const rad = 3 + Math.random() * (stageRadius - 5);
+            p.score += 20; showFloatingText(p.x, p.y + 2, p.z, '+20 🍬', '#00f5d4');
+            const ang = Math.random() * Math.PI * 2, rad = 4 + Math.random() * (stageRadius - 7);
             c.mesh.position.set(Math.cos(ang) * rad, 0.8, Math.sin(ang) * rad);
             updateRankingUI();
           }
@@ -1020,44 +791,37 @@
       });
 
       if (crownState.holderId && players[crownState.holderId] && Math.random() < 0.08) {
-        players[crownState.holderId].score += 2;
-        updateRankingUI();
+        players[crownState.holderId].score += 2; updateRankingUI();
       }
 
       const me = players[myClientId];
       if (me) {
         document.getElementById('ctrl-score-num').textContent = me.score;
         const cdEl = document.getElementById('spin-cd-text');
-        cdEl.textContent = me.spinCd > 0 ? `WAIT ${(me.spinCd / 60).toFixed(1)}s` : 'READY!';
+        cdEl.textContent = me.spinCd > 0 ? `${(me.spinCd / 60).toFixed(1)}s` : 'READY';
+
+        // スマホ用ミニプレビューカメラを自分のキャラに追従させる！
+        if (miniScene && miniCamera && miniRenderer) {
+          miniCamera.position.set(me.x, me.y + 14, me.z + 12);
+          miniCamera.lookAt(me.x, me.y, me.z);
+          miniRenderer.render(scene, miniCamera);
+        }
       }
     }
 
     function handlePlayerRingOut(victim) {
       playSound('ko');
-
       if (crownState.holderId === victim.id) {
-        crownState.holderId = null;
-        crownState.x = (Math.random() - 0.5) * 6;
-        crownState.z = (Math.random() - 0.5) * 6;
-        spawnDanmaku(`👑 ${victim.name} が転落して王冠を落としたぞ！！`, '#facc15');
+        crownState.holderId = null; crownState.x = 0; crownState.z = 0;
+        spawnDanmaku(`👑 ${victim.name} が王冠を落とした！`, '#facc15');
       }
-
       if (victim.lastHitBy && players[victim.lastHitBy] && victim.lastHitBy !== victim.id) {
-        const killer = players[victim.lastHitBy];
-        killer.score += 150;
-        showFloatingText(killer.x, killer.y + 3, killer.z, `🔥 KO! +150pt`, '#ff477e');
-        spawnDanmaku(`💥 ${killer.name} が ${victim.name} を場外へ突き落とした！ (+150pt)`, killer.color);
-      } else {
-        showFloatingText(0, 3, 0, `😱 ${victim.name} が場外へドボン！`, '#38bdf8');
+        const killer = players[victim.lastHitBy]; killer.score += 150;
+        showFloatingText(killer.x, killer.y + 3, killer.z, `🔥 KO! +150`, '#ff477e');
+        spawnDanmaku(`💥 ${killer.name} が ${victim.name} を場外KO！`, killer.color);
       }
-
-      const ang = Math.random() * Math.PI * 2;
-      const rad = Math.random() * 6;
-      victim.x = Math.cos(ang) * rad;
-      victim.z = Math.sin(ang) * rad;
-      victim.y = 12;
-      victim.vx = 0; victim.vy = 0; victim.vz = 0;
-      victim.lastHitBy = null;
+      victim.x = (Math.random() - 0.5) * 8; victim.z = (Math.random() - 0.5) * 8;
+      victim.y = 12; victim.vx = 0; victim.vy = 0; victim.vz = 0; victim.lastHitBy = null;
       updateRankingUI();
     }
 
@@ -1065,32 +829,21 @@
       const container = document.getElementById('three-container');
       const layer = document.getElementById('floating-layer');
       if (!container || !layer || !camera) return;
-
-      const vec = new THREE.Vector3(x, y, z);
-      vec.project(camera);
+      const vec = new THREE.Vector3(x, y, z).project(camera);
       const sx = (vec.x * 0.5 + 0.5) * container.clientWidth;
       const sy = (-(vec.y * 0.5) + 0.5) * container.clientHeight;
-
       const el = document.createElement('div');
-      el.className = 'floating-score text-sm md:text-base';
-      el.style.left = `${sx}px`;
-      el.style.top = `${sy}px`;
-      el.style.color = color;
-      el.textContent = text;
-      layer.appendChild(el);
-      setTimeout(() => el.remove(), 1100);
+      el.className = 'floating-score text-sm'; el.style.left = `${sx}px`; el.style.top = `${sy}px`; el.style.color = color; el.textContent = text;
+      layer.appendChild(el); setTimeout(() => el.remove(), 1100);
     }
 
     function spawnDanmaku(text, color = '#ffffff') {
       const layer = document.getElementById('danmaku-layer');
       if (!layer) return;
       const item = document.createElement('div');
-      item.className = 'danmaku-item text-lg md:text-2xl';
-      item.style.top = `${12 + Math.random() * 60}%`;
-      item.style.color = color;
-      item.textContent = text;
-      layer.appendChild(item);
-      setTimeout(() => item.remove(), 6500);
+      item.className = 'danmaku-item text-lg md:text-xl';
+      item.style.top = `${15 + Math.random() * 55}%`; item.style.color = color; item.textContent = text;
+      layer.appendChild(item); setTimeout(() => item.remove(), 6500);
     }
 
     function updateRankingUI() {
@@ -1098,34 +851,25 @@
       document.getElementById('player-count').textContent = `${list.length}人`;
       const board = document.getElementById('leaderboard');
       board.innerHTML = list.map((p, i) => `
-        <div class="flex items-center justify-between px-2.5 py-1.5 rounded-xl ${i === 0 ? 'bg-yellow-400/25 border border-yellow-300/50' : 'bg-black/40'}">
-          <div class="flex items-center gap-1.5 truncate">
-            <span class="font-arcade font-black w-4 text-yellow-300">${i + 1}</span>
+        <div class="flex items-center justify-between px-2 py-1 rounded-lg ${i === 0 ? 'bg-yellow-400/25 border border-yellow-300/50' : 'bg-black/40'}">
+          <div class="flex items-center gap-1 truncate">
+            <span class="font-arcade font-black w-3 text-yellow-300">${i + 1}</span>
             <span>${crownState.holderId === p.id ? '👑' : p.face}</span>
             <span class="font-black truncate text-white">${p.name}</span>
           </div>
-          <span class="font-arcade font-black text-yellow-300 ml-2">${p.score}</span>
+          <span class="font-arcade font-black text-yellow-300">${p.score}</span>
         </div>
       `).join('');
     }
 
     function resetMatch() {
-      crownState.holderId = null;
-      crownState.x = 0; crownState.z = 0;
+      crownState.holderId = null; crownState.x = 0; crownState.z = 0;
       Object.values(players).forEach(p => {
-        p.score = 0;
-        p.x = (Math.random() - 0.5) * 10;
-        p.z = (Math.random() - 0.5) * 10;
-        p.y = 8;
-        p.vx = 0; p.vy = 0; p.vz = 0;
+        p.score = 0; p.x = (Math.random() - 0.5) * 10; p.z = (Math.random() - 0.5) * 10; p.y = 8; p.vx = 0; p.vy = 0; p.vz = 0;
       });
-      updateRankingUI();
-      spawnDanmaku('🔄 スコア＆王冠をリセットして新ラウンド開始！', '#00f5d4');
+      updateRankingUI(); spawnDanmaku('🔄 スコア＆王冠リセット！', '#00f5d4');
     }
 
-    // ============================================================================
-    // 7. ネットワーク同期
-    // ============================================================================
     function initNetworkSync() {
       document.getElementById('room-code-text').textContent = roomCode;
       document.getElementById('manual-room-input').value = roomCode;
@@ -1133,21 +877,17 @@
       const joinUrl = `${window.location.origin}${window.location.pathname}?room=${roomCode}`;
       const qrBox = document.getElementById('qrcode-box');
       qrBox.innerHTML = '';
-      new QRCode(qrBox, { text: joinUrl, width: 116, height: 116 });
+      new QRCode(qrBox, { text: joinUrl, width: 104, height: 104 });
 
       mqttTopicHost = `ccc-wacha-2026/${roomCode}/host`;
       mqttTopicState = `ccc-wacha-2026/${roomCode}/state`;
 
       mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
       mqttClient.on('connect', () => {
-        document.getElementById('conn-badge').textContent = `ONLINE (ROOM: ${roomCode})`;
-        document.getElementById('ctrl-sync-text').textContent = `🟢 ROOM [${roomCode}] に同期中！`;
+        document.getElementById('conn-badge').textContent = `ONLINE`;
         mqttClient.subscribe(mqttTopicHost);
         mqttClient.subscribe(mqttTopicState);
-
-        if (roomParam) {
-          sendControllerInput({ type: 'join' });
-        }
+        if (roomParam) sendControllerInput({ type: 'join' });
       });
 
       mqttClient.on('message', (topic, payload) => {
@@ -1165,47 +905,30 @@
     function connectToManualRoom() {
       const val = document.getElementById('manual-room-input').value.trim().toUpperCase();
       if (!val) return;
-      if (mqttClient) {
-        mqttClient.unsubscribe(mqttTopicHost);
-        mqttClient.unsubscribe(mqttTopicState);
-      }
+      if (mqttClient) { mqttClient.unsubscribe(mqttTopicHost); mqttClient.unsubscribe(mqttTopicState); }
       roomCode = val;
       document.getElementById('room-code-text').textContent = roomCode;
       mqttTopicHost = `ccc-wacha-2026/${roomCode}/host`;
       mqttTopicState = `ccc-wacha-2026/${roomCode}/state`;
       if (mqttClient && mqttClient.connected) {
-        mqttClient.subscribe(mqttTopicHost);
-        mqttClient.subscribe(mqttTopicState);
+        mqttClient.subscribe(mqttTopicHost); mqttClient.subscribe(mqttTopicState);
         sendControllerInput({ type: 'join' });
-        document.getElementById('ctrl-sync-text').textContent = `🟢 ROOM [${roomCode}] に接続完了！`;
       }
     }
 
     function sendControllerInput(extra = {}) {
       const name = document.getElementById('ctrl-name-input').value || 'PLAYER';
-      const packet = {
-        id: myClientId,
-        name,
-        jx: Number(joyVec.x.toFixed(2)),
-        jy: Number(joyVec.y.toFixed(2)),
-        ...extra
-      };
+      const packet = { id: myClientId, name, jx: Number(joyVec.x.toFixed(2)), jy: Number(joyVec.y.toFixed(2)), ...extra };
       handleHostPacket(packet);
-
-      if (mqttClient && mqttClient.connected) {
-        mqttClient.publish(mqttTopicHost, JSON.stringify(packet));
-      }
+      if (mqttClient && mqttClient.connected) mqttClient.publish(mqttTopicHost, JSON.stringify(packet));
     }
 
     function handleHostPacket(data) {
       if (!data || !data.id) return;
       packetsCount++;
-      packetVisuals.push({ prog: 0, color: '#00f5d4' });
-
       const p = ensurePlayer(data.id, data.name, false);
       if (typeof data.jx === 'number') p.joyX = data.jx;
       if (typeof data.jy === 'number') p.joyY = data.jy;
-
       if (data.action === 'jump') doJump(p);
       if (data.action === 'dive') doDive(p);
       if (data.action === 'spin') doSpinAttack(p);
@@ -1213,26 +936,12 @@
         spawnDanmaku(`${p.face} ${p.name}: ${data.reaction}`, p.color);
         showFloatingText(p.x, p.y + 3.2, p.z, data.reaction, '#ffffff');
       }
-
-      if (Math.random() < 0.25) {
-        const logBox = document.getElementById('packet-log');
-        if (logBox) {
-          const line = document.createElement('div');
-          line.textContent = `[P2P] ${p.name} (${data.jx},${data.jy}) ${data.action || ''}`;
-          logBox.prepend(line);
-          while (logBox.children.length > 4) logBox.lastChild.remove();
-        }
-      }
     }
 
     function sendProfileUpdate() { sendControllerInput({ type: 'profile' }); }
     function sendReaction(msg) { sendControllerInput({ reaction: msg }); }
 
-    // ============================================================================
-    // 8. スマホコントローラー（ジョイスティック＆ボタン＆キーボード対応）
-    // ============================================================================
     let joyVec = { x: 0, y: 0 };
-
     function initControllerPad() {
       const zone = document.getElementById('joy-zone');
       const knob = document.getElementById('joy-knob');
@@ -1240,191 +949,72 @@
 
       function updateKnob(clientX, clientY) {
         const rect = zone.getBoundingClientRect();
-        const cx = rect.left + rect.width / 2;
-        const cy = rect.top + rect.height / 2;
-        const maxR = rect.width / 2 - 24;
-        let dx = clientX - cx;
-        let dy = clientY - cy;
-        const d = Math.hypot(dx, dy);
-        if (d > maxR) {
-          dx = (dx / d) * maxR;
-          dy = (dy / d) * maxR;
-        }
+        const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+        const maxR = rect.width / 2 - 20;
+        let dx = clientX - cx, dy = clientY - cy, d = Math.hypot(dx, dy);
+        if (d > maxR) { dx = (dx / d) * maxR; dy = (dy / d) * maxR; }
         knob.style.transform = `translate(${dx}px, ${dy}px)`;
-        joyVec.x = dx / maxR;
-        joyVec.y = dy / maxR;
+        joyVec.x = dx / maxR; joyVec.y = dy / maxR;
       }
 
       function resetKnob() {
-        dragging = false;
-        knob.style.transform = 'translate(0px, 0px)';
-        joyVec.x = 0; joyVec.y = 0;
-        sendControllerInput();
+        dragging = false; knob.style.transform = 'translate(0px, 0px)';
+        joyVec.x = 0; joyVec.y = 0; sendControllerInput();
       }
 
-      zone.addEventListener('pointerdown', e => {
-        dragging = true;
-        zone.setPointerCapture(e.pointerId);
-        updateKnob(e.clientX, e.clientY);
-        sendControllerInput();
-      });
-      zone.addEventListener('pointermove', e => {
-        if (!dragging) return;
-        updateKnob(e.clientX, e.clientY);
-      });
-      zone.addEventListener('pointerup', resetKnob);
-      zone.addEventListener('pointercancel', resetKnob);
+      zone.addEventListener('pointerdown', e => { dragging = true; zone.setPointerCapture(e.pointerId); updateKnob(e.clientX, e.clientY); sendControllerInput(); });
+      zone.addEventListener('pointermove', e => { if (dragging) updateKnob(e.clientX, e.clientY); });
+      zone.addEventListener('pointerup', resetKnob); zone.addEventListener('pointercancel', resetKnob);
 
-      document.getElementById('btn-jump').addEventListener('pointerdown', e => {
-        e.preventDefault();
-        sendControllerInput({ action: 'jump' });
-      });
-      document.getElementById('btn-dive').addEventListener('pointerdown', e => {
-        e.preventDefault();
-        sendControllerInput({ action: 'dive' });
-      });
-      document.getElementById('btn-spin').addEventListener('pointerdown', e => {
-        e.preventDefault();
-        sendControllerInput({ action: 'spin' });
-      });
+      document.getElementById('btn-jump').addEventListener('pointerdown', e => { e.preventDefault(); sendControllerInput({ action: 'jump' }); });
+      document.getElementById('btn-dive').addEventListener('pointerdown', e => { e.preventDefault(); sendControllerInput({ action: 'dive' }); });
+      document.getElementById('btn-spin').addEventListener('pointerdown', e => { e.preventDefault(); sendControllerInput({ action: 'spin' }); });
 
-      const keys = {};
-      window.addEventListener('keydown', e => {
-        if (document.activeElement.tagName === 'INPUT') return;
-        keys[e.code] = true;
-        if (e.code === 'Space') sendControllerInput({ action: 'jump' });
-        if (e.code === 'ShiftLeft' || e.code === 'KeyZ') sendControllerInput({ action: 'dive' });
-        if (e.code === 'Enter' || e.code === 'KeyX') sendControllerInput({ action: 'spin' });
-        syncKeyVec();
-      });
-      window.addEventListener('keyup', e => {
-        keys[e.code] = false;
-        syncKeyVec();
-      });
-
-      function syncKeyVec() {
-        let kx = 0, ky = 0;
-        if (keys['ArrowLeft'] || keys['KeyA']) kx -= 1;
-        if (keys['ArrowRight'] || keys['KeyD']) kx += 1;
-        if (keys['ArrowUp'] || keys['KeyW']) ky -= 1;
-        if (keys['ArrowDown'] || keys['KeyS']) ky += 1;
-        const l = Math.hypot(kx, ky) || 1;
-        joyVec.x = kx ? kx / l : 0;
-        joyVec.y = ky ? ky / l : 0;
-      }
-
-      setInterval(() => {
-        if (Math.abs(joyVec.x) > 0.01 || Math.abs(joyVec.y) > 0.01) {
-          sendControllerInput();
-        }
-      }, 80);
-    }
-
-    function renderNetworkVisualizer() {
-      const cvs = document.getElementById('net-canvas');
-      if (!cvs) return;
-      const ctx = cvs.getContext('2d');
-      ctx.clearRect(0, 0, cvs.width, cvs.height);
-
-      const cx = cvs.width / 2, cy = cvs.height / 2;
-      const list = Object.values(players);
-      list.forEach((p, idx) => {
-        const ang = (idx / Math.max(1, list.length)) * Math.PI * 2;
-        const nx = cx + Math.cos(ang) * 70;
-        const ny = cy + Math.sin(ang) * 24;
-        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-        ctx.beginPath(); ctx.moveTo(nx, ny); ctx.lineTo(cx, cy); ctx.stroke();
-        ctx.fillStyle = p.color;
-        ctx.beginPath(); ctx.arc(nx, ny, 4.5, 0, Math.PI * 2); ctx.fill();
-      });
-
-      ctx.fillStyle = '#facc15';
-      ctx.beginPath(); ctx.arc(cx, cy, 6.5, 0, Math.PI * 2); ctx.fill();
-
-      packetVisuals.forEach(v => v.prog += 0.08);
-      packetVisuals = packetVisuals.filter(v => v.prog < 1);
+      setInterval(() => { if (Math.abs(joyVec.x) > 0.01 || Math.abs(joyVec.y) > 0.01) sendControllerInput(); }, 80);
     }
 
     function switchViewMode(mode) {
       currentMode = mode;
-      const hostSec = document.getElementById('host-section');
-      const ctrlSec = document.getElementById('controller-section');
-      const btnHost = document.getElementById('btn-mode-host');
-      const btnSplit = document.getElementById('btn-mode-split');
-      const btnCtrl = document.getElementById('btn-mode-ctrl');
-
-      btnHost.className = 'arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-indigo-800 text-indigo-100 font-bold';
-      btnSplit.className = 'arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-indigo-800 text-indigo-100 font-bold';
-      btnCtrl.className = 'arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-indigo-800 text-indigo-100 font-bold';
+      const hostSec = document.getElementById('host-section'), ctrlSec = document.getElementById('controller-section');
+      document.getElementById('btn-mode-host').className = 'arcade-btn text-xs px-2 py-1.5 rounded-xl bg-indigo-800 text-indigo-100 font-bold';
+      document.getElementById('btn-mode-split').className = 'arcade-btn text-xs px-2 py-1.5 rounded-xl bg-indigo-800 text-indigo-100 font-bold';
+      document.getElementById('btn-mode-ctrl').className = 'arcade-btn text-xs px-2 py-1.5 rounded-xl bg-indigo-800 text-indigo-100 font-bold';
 
       if (mode === 'host') {
-        hostSec.classList.remove('hidden');
-        ctrlSec.classList.add('hidden');
-        btnHost.className = 'arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-pink-500 text-white font-black';
+        hostSec.classList.remove('hidden'); ctrlSec.classList.add('hidden');
+        document.getElementById('btn-mode-host').className = 'arcade-btn text-xs px-2 py-1.5 rounded-xl bg-pink-500 text-white font-black';
       } else if (mode === 'controller') {
-        hostSec.classList.add('hidden');
-        ctrlSec.classList.remove('hidden');
-        ctrlSec.classList.remove('lg:w-[410px]');
-        ctrlSec.classList.add('w-full', 'flex-1');
-        btnCtrl.className = 'arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-pink-500 text-white font-black';
+        hostSec.classList.add('hidden'); ctrlSec.classList.remove('hidden');
+        ctrlSec.classList.remove('lg:w-[410px]'); ctrlSec.classList.add('w-full', 'flex-1');
+        document.getElementById('btn-mode-ctrl').className = 'arcade-btn text-xs px-2 py-1.5 rounded-xl bg-pink-500 text-white font-black';
       } else {
-        hostSec.classList.remove('hidden');
-        ctrlSec.classList.remove('hidden', 'w-full', 'flex-1');
+        hostSec.classList.remove('hidden'); ctrlSec.classList.remove('hidden', 'w-full', 'flex-1');
         ctrlSec.classList.add('lg:w-[410px]');
-        btnSplit.className = 'arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-pink-500 text-white font-black';
+        document.getElementById('btn-mode-split').className = 'arcade-btn text-xs px-2 py-1.5 rounded-xl bg-pink-500 text-white font-black';
       }
       setTimeout(() => window.dispatchEvent(new Event('resize')), 60);
     }
 
-    // ============================================================================
-    // 9. 起動とメインループ
-    // ============================================================================
     window.addEventListener('DOMContentLoaded', () => {
-      const randNum = Math.floor(10 + Math.random() * 89);
-      document.getElementById('ctrl-name-input').value = `P_${randNum}`;
-
+      document.getElementById('ctrl-name-input').value = `P_${Math.floor(10 + Math.random() * 89)}`;
       initThreeStage();
       initControllerPad();
       initNetworkSync();
 
-      // 初期状態：CPUボット4体を配置
-      spawnBot();
-      spawnBot();
-      spawnBot();
-      spawnBot();
+      spawnBot(); spawnBot(); spawnBot(); spawnBot();
 
-      if (roomParam) {
-        switchViewMode('controller');
-      } else {
-        // 展示PCで開いた時は最初から展示大画面で起動
-        switchViewMode('host');
-      }
+      if (roomParam) switchViewMode('controller'); else switchViewMode('host');
 
       setInterval(() => {
-        ppsValue = packetsCount;
-        packetsCount = 0;
-        const ppsEl = document.getElementById('pps-label');
-        if (ppsEl) ppsEl.textContent = `${ppsValue} pkt/s`;
-
         eventCountdown--;
-        if (eventCountdown <= 0) {
-          eventCountdown = 20;
-          triggerArenaEvent();
-        }
+        if (eventCountdown <= 0) { eventCountdown = 20; triggerArenaEvent(); }
         const timerEl = document.getElementById('event-timer');
         if (timerEl) timerEl.textContent = `00:${String(eventCountdown).padStart(2, '0')}`;
-
-        if (mqttClient && mqttClient.connected && currentMode !== 'controller') {
-          const scores = {};
-          Object.values(players).forEach(p => scores[p.id] = p.score);
-          mqttClient.publish(mqttTopicState, JSON.stringify({ scores }));
-        }
       }, 1000);
 
       function animate() {
         requestAnimationFrame(animate);
         updateGamePhysics();
-        renderNetworkVisualizer();
         if (renderer && scene && camera) renderer.render(scene, camera);
       }
       animate();
