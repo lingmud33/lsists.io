@@ -37,6 +37,9 @@
     #follow-camera canvas { display: block; width: 100%; height: 100%; }
     #follow-camera-label { position: absolute; left: .5rem; top: .4rem; z-index: 2; padding: .18rem .4rem; border-radius: .35rem; background: rgba(8,12,38,.72); font-size: 10px; font-weight: 900; color: #67e8f9; pointer-events: none; }
     #ctrl-player-count { position: absolute; left: .5rem; bottom: .35rem; z-index: 2; padding: .18rem .4rem; border-radius: .35rem; background: rgba(8,12,38,.72); font-size: 10px; font-weight: 900; color: #fde047; pointer-events: none; }
+    #ctrl-game-status { min-width: 0; flex: 1; font-size: 10px; font-weight: 900; color: #a5f3fc; line-height: 1.25; }
+    #btn-join-leave { flex-shrink: 0; min-height: 2rem; }
+    #ctrl-name-input:disabled { opacity: .72; }
     #mini-map { position: absolute; right: .35rem; top: .35rem; z-index: 2; display: block; width: clamp(5rem, 23%, 7rem); max-width: 42%; height: auto; aspect-ratio: 16 / 10; border: 1px solid rgba(255,255,255,.3); border-radius: .35rem; opacity: .94; }
     @media (max-width: 520px) {
       #top-bar > div:first-child { flex: 1 1 100%; }
@@ -239,15 +242,22 @@
           <div class="flex items-center gap-2.5">
             <div id="ctrl-color-icon" class="w-9 h-9 rounded-2xl bg-pink-500 border-2 border-white shadow-md flex items-center justify-center font-black text-lg">😆</div>
             <div>
-              <input id="ctrl-name-input" type="text" maxlength="8" value="PLAYER" onchange="sendProfileUpdate()"
+              <input id="ctrl-name-input" type="text" maxlength="14" value="" placeholder="名前を入力" autocomplete="nickname" onchange="sendProfileUpdate()"
                 class="bg-transparent font-black text-base text-white focus:outline-none border-b-2 border-dashed border-pink-300 w-28" />
-              <div id="ctrl-sync-text" class="text-[10px] text-emerald-300 font-bold">🟢 接続OK！</div>
+              <div id="ctrl-sync-text" class="text-[10px] text-emerald-300 font-bold">🟡 ルーム接続待ち</div>
             </div>
           </div>
           <div class="text-right bg-black/40 px-3 py-1 rounded-xl border border-yellow-400/40">
             <div class="text-[10px] text-yellow-200 font-bold">SCORE</div>
             <div id="ctrl-score-num" class="font-arcade text-2xl font-black text-yellow-300">0</div>
           </div>
+        </div>
+        <div class="flex items-center justify-between gap-2 px-1 py-0.5">
+          <div class="min-w-0">
+            <div id="ctrl-lives" class="text-xs font-black text-rose-300">残りライフ：♡♡</div>
+            <div id="ctrl-game-status">名前を入力して「参加する」を押してください</div>
+          </div>
+          <button id="btn-join-leave" onclick="toggleParticipation()" class="arcade-btn bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs px-3 py-1.5 rounded-xl">参加する</button>
         </div>
 
         <!-- ルーム番号入力バー -->
@@ -400,7 +410,18 @@
     const roomParam = urlParams.get('room');
     let currentMode = roomParam ? 'controller' : 'host';
     let roomCode = (roomParam || Math.random().toString(36).substring(2, 6)).toUpperCase();
-    let myClientId = 'p_' + Math.random().toString(36).substring(2, 9);
+    let myClientId = (() => {
+      try {
+        const key = 'wacha-wacha-player-id';
+        let id = sessionStorage.getItem(key);
+        if (!id) { id = 'p_' + Math.random().toString(36).substring(2, 9); sessionStorage.setItem(key, id); }
+        return id;
+      } catch (_) { return 'p_' + Math.random().toString(36).substring(2, 9); }
+    })();
+    let isJoined = false;
+    let localGameOver = false;
+    let desiredBotCount = 0;
+    const INACTIVE_PLAYER_TIMEOUT_MS = 120000;
 
     let mqttClient = null;
     let mqttTopicHost = '';
@@ -416,11 +437,12 @@
     // 3. Three.js フル3Dステージ ＆ Blender (.glb) ローダー
     // ============================================================================
     let scene, camera, renderer, gltfLoader;
-    let stageRadius = 34;
+    let stageRadius = 30;
     let platformGroup, crownMesh;
     let customBlenderModelTemplate = null;
 
     const players = {};
+    const eliminatedPlayerIds = new Set();
     const candies = [];
     let crownState = { holderId: null, x: 0, z: 0, angle: 0 };
     let eventCountdown = 20;
@@ -437,7 +459,7 @@
 
       camera = new THREE.PerspectiveCamera(remoteView ? 58 : 45, w / h, 0.1, remoteView ? 180 : 500);
       if (!remoteView) fitCameraToStage(container);
-      else camera.position.set(0, 6, -9);
+      else { camera.position.set(0, 13, 20); camera.lookAt(0, 1, 0); }
 
       renderer = new THREE.WebGLRenderer({
         antialias: !remoteView && window.innerWidth >= 768,
@@ -729,12 +751,19 @@
         angle: 0,
         walkCycle: 0,
         score: 0,
+        lives: isBot ? 1 : 2,
+        eliminated: false,
         spinCd: 0,
         diveTimer: 0,
+        diveCd: 0,
+        diveDirX: 0,
+        diveDirZ: 1,
+        diveHitIds: new Set(),
         spinAnimTimer: 0,
         botDecisionTimer: 0,
         lastHitBy: null,
-        lastSeenAt: Date.now()
+        lastSeenAt: Date.now(),
+        lastActivityAt: Date.now()
       };
       updateRankingUI();
       updateBotCountUI();
@@ -759,15 +788,31 @@
       updateBotCountUI();
     }
 
-    // AI CPUを1体増やす
-    function spawnBot() {
-      const botNames = ['ぷにロボ', 'モチまる', 'コロ助', 'ピコ太郎', 'ネジくん', 'タマちゃん', 'メカっち', 'ゴロリ'];
-      const botList = Object.values(players).filter(p => p.isBot);
-      // CPU過多による衝突判定・演出の負荷を抑える。
-      if (botList.length >= 8) return;
-      const id = 'bot_' + Math.random().toString(36).substring(2, 7);
-      const name = botNames[botList.length % botNames.length] + (botList.length + 1);
-      ensurePlayer(id, name, true);
+    // AI CPU名はバリエーションを増やし、転落時は別のCPUに交代する。
+    const BOT_NAMES = [
+      'たまごろう', 'ふぇりー', 'ぷよんこ', 'もちきち', 'ぽてまる', 'にゃんた',
+      'ころもち', 'ぷにすけ', 'まめぞう', 'こはく', 'ぴよた', 'ぽんたろう',
+      'おもち', 'ぐみぐみ', 'ねむねむ', 'ちくわぶ', 'はにまる', 'ぷくりん',
+      'もふた', 'ぺんぺん', 'みたらし', 'こつぶ', 'どんぐり', 'ふわりん',
+      'ぽよすけ', 'つぶあん', 'しらたま', 'くるりん', 'にぼし', 'まるぽよ',
+      'ごましお', 'きなこもち', 'あずき丸', 'ぽてち', 'やきもち', 'うにまる'
+    ];
+
+    function spawnBot(isReplacement = false) {
+      const botList = Object.values(players).filter(p => p.isBot && !p.eliminated);
+      if (isReplacement) {
+        if (botList.length >= desiredBotCount) return;
+      } else {
+        if (botList.length >= 8) return;
+        desiredBotCount = Math.min(8, desiredBotCount + 1);
+      }
+      const used = new Set(botList.map(p => p.name));
+      const available = BOT_NAMES.filter(name => !used.has(name));
+      const baseName = available.length
+        ? available[Math.floor(Math.random() * available.length)]
+        : `CPU-${Math.floor(100 + Math.random() * 900)}`;
+      const id = 'bot_' + Math.random().toString(36).substring(2, 9);
+      ensurePlayer(id, baseName, true);
       playSound('boing');
     }
 
@@ -776,12 +821,14 @@
       const botIds = Object.keys(players).filter(id => players[id].isBot);
       if (botIds.length === 0) return;
       const targetId = botIds[botIds.length - 1];
+      desiredBotCount = Math.max(0, desiredBotCount - 1);
       removePlayerFromGame(targetId);
       playSound('boing');
     }
 
     // AI CPUをすべて消して0体にする
     function clearBots() {
+      desiredBotCount = 0;
       const botIds = Object.keys(players).filter(id => players[id].isBot);
       botIds.forEach(id => removePlayerFromGame(id));
       updateRankingUI();
@@ -797,37 +844,45 @@
 
     // アクション処理
 
+    // 飛び込み：向いている方向へ高速直進し、進路上の相手を一度だけ大きく吹き飛ばす。
     function doDive(p) {
-      if (p.diveTimer > 0) return;
-      const dirX = Math.abs(p.joyX) + Math.abs(p.joyY) > 0.1 ? p.joyX : Math.sin(p.angle);
-      const dirZ = Math.abs(p.joyX) + Math.abs(p.joyY) > 0.1 ? p.joyY : Math.cos(p.angle);
+      if (!p || p.eliminated || p.diveCd > 0 || p.diveTimer > 0) return;
+      let dirX = p.joyX, dirZ = p.joyY;
+      if (Math.hypot(dirX, dirZ) < 0.12) {
+        dirX = Math.sin(p.angle);
+        dirZ = Math.cos(p.angle);
+      }
       const len = Math.hypot(dirX, dirZ) || 1;
-      p.vx += (dirX / len) * 0.34;
-      p.vz += (dirZ / len) * 0.34;
-      p.diveTimer = 18;
+      p.diveDirX = dirX / len;
+      p.diveDirZ = dirZ / len;
+      p.diveHitIds = new Set();
+      p.vx = p.vx * 0.25 + p.diveDirX * 0.46;
+      p.vz = p.vz * 0.25 + p.diveDirZ * 0.46;
+      p.diveTimer = 22;
+      p.diveCd = 76;
       playSound('dive');
     }
 
+    // 回転：密着してくる相手を近距離で弾き、距離を作るディフェンス技。
     function doSpinAttack(p) {
-      if (p.spinCd > 0) return;
-      p.spinCd = 130;
-      p.spinAnimTimer = 25;
+      if (!p || p.eliminated || p.spinCd > 0) return;
+      p.spinCd = 105;
+      p.spinAnimTimer = 22;
       playSound('spin');
 
-      // per-attackのsetIntervalや大量の画面演出を作らず、軽い回転アニメーションで表現する。
-
-      const powerMult = crownState.holderId === p.id ? 1.45 : 1.0;
+      const radius = 5.4;
+      const powerMult = crownState.holderId === p.id ? 1.18 : 1.0;
       Object.values(players).forEach(other => {
-        if (other.id === p.id) return;
+        if (other.id === p.id || other.eliminated) return;
         const dx = other.x - p.x;
         const dz = other.z - p.z;
         const dist = Math.hypot(dx, dz);
-        if (dist < 8.5 && dist > 0.01) {
-          const force = ((8.5 - dist) / 8.5) * 0.48 * powerMult;
+        if (dist < radius && dist > 0.01) {
+          const force = (0.22 + ((radius - dist) / radius) * 0.20) * powerMult;
           other.vx += (dx / dist) * force;
           other.vz += (dz / dist) * force;
           other.lastHitBy = p.id;
-          showFloatingText(other.x, other.y + 2, other.z, '💥 SPIN HIT!', '#facc15');
+          showFloatingText(other.x, other.y + 2, other.z, '💥 PUSH!', '#facc15');
         }
       });
     }
@@ -863,7 +918,9 @@
       }
 
       pList.forEach(p => {
+        if (!players[p.id] || p.eliminated) return;
         if (p.spinCd > 0) p.spinCd--;
+        if (p.diveCd > 0) p.diveCd--;
         if (p.diveTimer > 0) p.diveTimer--;
         if (p.spinAnimTimer > 0) p.spinAnimTimer--;
 
@@ -879,7 +936,7 @@
               goalX = -p.x / distCenter * 10;
               goalZ = -p.z / distCenter * 10;
             } else {
-              const humans = pList.filter(o => !o.isBot && o.id !== p.id);
+              const humans = pList.filter(o => !o.isBot && !o.eliminated && o.id !== p.id);
               if (humans.length) {
                 // 距離だけでなく、既に担当しているCPU数も考慮して人間側へ均等に向かう。
                 let bestScore = Infinity;
@@ -909,7 +966,7 @@
             // 近いCPUから反発し、集団がひと塊になるのを防ぐ。場外付近では中央への復帰を優先。
             if (distCenter <= stageRadius * 0.78) {
               pList.forEach(other => {
-                if (!other.isBot || other.id === p.id) return;
+                if (!other.isBot || other.eliminated || other.id === p.id) return;
                 const ox = p.x - other.x, oz = p.z - other.z;
                 const od = Math.hypot(ox, oz);
                 if (od > 0.01 && od < 5.2) {
@@ -925,23 +982,47 @@
 
             if (target) {
               const toTarget = Math.hypot(target.x - p.x, target.z - p.z);
-              if (toTarget < 6.4 && p.spinCd <= 0 && Math.random() < 0.18) doSpinAttack(p);
-              else if (toTarget < 4.6 && p.diveTimer <= 0 && Math.random() < 0.09) doDive(p);
+              if (toTarget < 3.8 && p.spinCd <= 0 && Math.random() < 0.22) doSpinAttack(p);
+              else if (toTarget >= 3.8 && toTarget < 9.5 && p.diveCd <= 0 && Math.random() < 0.16) doDive(p);
             }
           }
         }
 
         // 移動上限を設け、急な吹き飛ばしで即座に場外へ飛ぶのを抑える。
         const moveAccel = crownState.holderId === p.id ? 0.021 : 0.018;
-        p.vx += p.joyX * moveAccel;
-        p.vz += p.joyY * moveAccel;
-        const maxSpeed = p.diveTimer > 0 ? 0.205 : 0.135;
+        if (p.diveTimer > 0) {
+          // Dash中は進行方向への推進を続け、見た目だけでなく実際に直線距離を稼ぐ。
+          p.vx += p.diveDirX * 0.06;
+          p.vz += p.diveDirZ * 0.06;
+        } else {
+          p.vx += p.joyX * moveAccel;
+          p.vz += p.joyY * moveAccel;
+        }
+        const maxSpeed = p.diveTimer > 0 ? 0.44 : 0.28;
         const speedNow = Math.hypot(p.vx, p.vz);
         if (speedNow > maxSpeed) { p.vx = p.vx / speedNow * maxSpeed; p.vz = p.vz / speedNow * maxSpeed; }
         p.x += p.vx;
         p.z += p.vz;
         p.vx *= 0.86;
         p.vz *= 0.86;
+
+        // 飛び込みの進路上にいるキャラを一度だけ、進行方向へ吹き飛ばす。
+        if (p.diveTimer > 0 && p.diveHitIds) {
+          pList.forEach(other => {
+            if (other.id === p.id || other.eliminated || !players[other.id] || p.diveHitIds.has(other.id)) return;
+            const rx = other.x - p.x, rz = other.z - p.z;
+            const along = rx * p.diveDirX + rz * p.diveDirZ;
+            const lateral = Math.abs(rx * p.diveDirZ - rz * p.diveDirX);
+            if (along >= -0.9 && along <= 6.8 && lateral < 1.55 && Math.abs(other.y - p.y) < 2.0) {
+              const force = 0.43 + Math.max(0, 1 - Math.max(0, along) / 6.8) * 0.18;
+              other.vx += p.diveDirX * force;
+              other.vz += p.diveDirZ * force;
+              other.lastHitBy = p.id;
+              p.diveHitIds.add(other.id);
+              showFloatingText(other.x, other.y + 2, other.z, '🚀 DIVE HIT!', '#67e8f9');
+            }
+          });
+        }
 
         // ジャンプや重力演算は廃止。ステージ外に出た時だけ落下KOを処理する。
         const distFromCenter = Math.hypot(p.x, p.z);
@@ -1005,6 +1086,7 @@
         for (let j = i + 1; j < pList.length; j++) {
           const a = pList[i];
           const b = pList[j];
+          if (!players[a.id] || !players[b.id] || a.eliminated || b.eliminated) continue;
           if (Math.abs(a.y - b.y) > 2.2) continue;
 
           const dx = b.x - a.x;
@@ -1044,6 +1126,7 @@
         c.mesh.position.y = 0.8 + Math.sin(c.phase) * 0.25;
 
         pList.forEach(p => {
+          if (!players[p.id] || p.eliminated) return;
           if (p.y >= -0.2 && Math.hypot(p.x - c.mesh.position.x, p.z - c.mesh.position.z) < 1.9) {
             p.score += 20;
             showFloatingText(p.x, p.y + 2, p.z, '+20 🍬', '#00f5d4');
@@ -1062,13 +1145,16 @@
 
       const me = players[myClientId];
       if (me) {
-        document.getElementById('ctrl-score-num').textContent = me.score;
+        const scoreEl = document.getElementById('ctrl-score-num');
+        if (scoreEl) scoreEl.textContent = me.score;
         const cdEl = document.getElementById('spin-cd-text');
-        cdEl.textContent = me.spinCd > 0 ? `WAIT ${(me.spinCd / 60).toFixed(1)}s` : 'READY!';
+        if (cdEl) cdEl.textContent = me.eliminated ? 'GAME OVER' : (me.spinCd > 0 ? `あと ${(me.spinCd / 60).toFixed(1)}秒` : '使用OK');
+        updateParticipationUI(me);
       }
     }
 
     function handlePlayerRingOut(victim) {
+      if (!victim || !players[victim.id] || victim.eliminated) return;
       playSound('ko');
 
       if (crownState.holderId === victim.id) {
@@ -1078,22 +1164,62 @@
         spawnDanmaku(`👑 ${victim.name} が転落して王冠を落としたぞ！！`, '#facc15');
       }
 
-      if (victim.lastHitBy && players[victim.lastHitBy] && victim.lastHitBy !== victim.id) {
+      if (victim.lastHitBy && players[victim.lastHitBy] && victim.lastHitBy !== victim.id && !players[victim.lastHitBy].eliminated) {
         const killer = players[victim.lastHitBy];
         killer.score += 150;
-        showFloatingText(killer.x, killer.y + 3, killer.z, `🔥 KO! +150pt`, '#ff477e');
+        showFloatingText(killer.x, killer.y + 3, killer.z, '🔥 KO! +150pt', '#ff477e');
         spawnDanmaku(`💥 ${killer.name} が ${victim.name} を場外へ突き落とした！ (+150pt)`, killer.color);
       } else {
         showFloatingText(0, 3, 0, `😱 ${victim.name} が場外へドボン！`, '#38bdf8');
       }
 
+      // CPUは1回落ちたら退場し、少し間を置いて別名のCPUへ交代。
+      if (victim.isBot) {
+        const oldName = victim.name;
+        removePlayerFromGame(victim.id, false);
+        spawnDanmaku(`🤖 ${oldName} が場外へ！新しいCPUが参戦する…`, '#67e8f9');
+        setTimeout(() => spawnBot(true), 650);
+        updateRankingUI();
+        return;
+      }
+
+      victim.lives = Math.max(0, (Number(victim.lives) || 2) - 1);
+      victim.joyX = 0; victim.joyY = 0;
+      victim.diveTimer = 0; victim.diveCd = 0; victim.spinCd = 0;
+      victim.diveHitIds = new Set();
+      victim.vx = 0; victim.vy = 0; victim.vz = 0;
+      victim.lastHitBy = null;
+
+      if (victim.lives <= 0) {
+        victim.eliminated = true;
+        eliminatedPlayerIds.add(victim.id);
+        victim.y = 0;
+        if (victim.mesh && scene) scene.remove(victim.mesh);
+        spawnDanmaku(`💀 ${victim.name} は2回転落！ゲームオーバー！`, '#fb7185');
+        if (victim.id === myClientId) {
+          localGameOver = true;
+          updateParticipationUI(victim);
+        }
+        updateRankingUI();
+        return;
+      }
+
+      // 1回目の転落は残り1ライフで中央付近から復帰。
       const ang = Math.random() * Math.PI * 2;
-      const rad = Math.random() * 8;
+      const rad = 4 + Math.random() * 7;
       victim.x = Math.cos(ang) * rad;
       victim.z = Math.sin(ang) * rad;
       victim.y = 0;
-      victim.vx = 0; victim.vy = 0; victim.vz = 0;
-      victim.lastHitBy = null;
+      victim.targetX = victim.renderX = victim.x;
+      victim.targetY = victim.renderY = 0;
+      victim.targetZ = victim.renderZ = victim.z;
+      victim.renderInitialized = false;
+      if (victim.mesh) {
+        victim.mesh.visible = true;
+        if (!victim.mesh.parent) scene.add(victim.mesh);
+        victim.mesh.position.set(victim.x, 0, victim.z);
+      }
+      spawnDanmaku(`❤️ ${victim.name} が復帰！残りライフ ${victim.lives}`, '#fb7185');
       updateRankingUI();
     }
 
@@ -1135,36 +1261,53 @@
 
     let lastRankingSignature = '';
     function updateRankingUI() {
-      const list = Object.values(players).sort((a, b) => b.score - a.score);
-      const signature = list.map(p => `${p.id}:${p.name}:${p.score}:${p.color}:${p.isBot}:${crownState.holderId === p.id}`).join('|');
+      const list = Object.values(players).sort((a, b) => Number(!!a.eliminated) - Number(!!b.eliminated) || b.score - a.score);
+      const signature = list.map(p => `${p.id}:${p.name}:${p.score}:${p.color}:${p.isBot}:${p.lives}:${p.eliminated}:${crownState.holderId === p.id}`).join('|');
       if (signature === lastRankingSignature) return;
       lastRankingSignature = signature;
-      document.getElementById('player-count').textContent = `${list.length}人`;
+      const aliveCount = list.filter(p => !p.eliminated).length;
+      const playerCountEl = document.getElementById('player-count');
+      if (playerCountEl) playerCountEl.textContent = `${aliveCount}人生存`;
       const board = document.getElementById('leaderboard');
+      if (!board) return;
       board.innerHTML = list.map((p, i) => `
-        <div class="flex items-center justify-between px-2.5 py-1.5 rounded-xl ${i === 0 ? 'bg-yellow-400/25 border border-yellow-300/50' : 'bg-black/40'}">
-          <div class="flex items-center gap-1.5 truncate">
+        <div class="flex items-center justify-between px-2.5 py-1.5 rounded-xl ${p.eliminated ? 'bg-black/25 opacity-60' : (i === 0 ? 'bg-yellow-400/25 border border-yellow-300/50' : 'bg-black/40')}">
+          <div class="flex items-center gap-1.5 truncate min-w-0">
             <span class="font-arcade font-black w-4 text-yellow-300">${i + 1}</span>
             <span>${crownState.holderId === p.id ? '👑' : p.face}</span>
             <span class="font-black truncate text-white">${escapeHTML(p.name)}</span>
           </div>
-          <span class="font-arcade font-black text-yellow-300 ml-2">${p.score}</span>
+          <div class="flex items-center gap-2 shrink-0 ml-2">
+            <span class="text-[10px] font-black ${p.eliminated ? 'text-rose-300' : 'text-rose-200'}">${p.eliminated ? 'OUT' : `♥${Math.max(0, p.lives ?? (p.isBot ? 1 : 2))}`}</span>
+            <span class="font-arcade font-black text-yellow-300">${p.score}</span>
+          </div>
         </div>
       `).join('');
     }
 
     function resetMatch() {
+      eliminatedPlayerIds.clear();
       crownState.holderId = null;
       crownState.x = 0; crownState.z = 0;
       Object.values(players).forEach(p => {
         p.score = 0;
+        p.lives = p.isBot ? 1 : 2;
+        p.eliminated = false;
         const a = Math.random() * Math.PI * 2;
-        const r = 7 + Math.random() * 10;
+        const r = 6 + Math.random() * 10;
         p.x = Math.cos(a) * r;
         p.z = Math.sin(a) * r;
         p.y = 0;
+        p.targetX = p.renderX = p.x; p.targetY = p.renderY = 0; p.targetZ = p.renderZ = p.z;
+        p.renderInitialized = false;
         p.vx = 0; p.vy = 0; p.vz = 0;
+        p.joyX = 0; p.joyY = 0;
+        p.spinCd = 0; p.diveCd = 0; p.diveTimer = 0; p.diveHitIds = new Set();
+        p.lastHitBy = null;
+        if (p.mesh) { p.mesh.visible = true; if (!p.mesh.parent) scene.add(p.mesh); }
+        if (p.id === myClientId) localGameOver = false;
       });
+      updateParticipationUI(players[myClientId] || null);
       updateRankingUI();
       spawnDanmaku('🔄 スコア＆王冠をリセットして新ラウンド開始！', '#00f5d4');
     }
@@ -1194,7 +1337,7 @@
         document.getElementById('ctrl-sync-text').textContent = `🟢 ROOM [${roomCode}] に同期中！`;
         mqttClient.subscribe(mqttTopicHost);
         mqttClient.subscribe(mqttTopicState);
-        if (roomParam) sendControllerInput({ type: 'join' });
+        if (roomParam && isJoined && !localGameOver) sendControllerInput({ type: 'join' });
       });
       mqttClient.on('reconnect', () => {
         document.getElementById('conn-badge').textContent = '再接続中…';
@@ -1211,8 +1354,7 @@
           if (topic === mqttTopicHost) {
             // ホスト以外は入力パケットを処理しない。ホストは自分のMQTTエコーも無視。
             if (!roomParam && data.id && data.id !== myClientId) {
-              if (data.type === 'leave') removePlayerFromGame(data.id, true);
-              else handleHostPacket(data);
+              handleHostPacket(data);
             }
           } else if (topic === mqttTopicState && roomParam && data.kind === 'snapshot') {
             applyAuthoritativeState(data);
@@ -1229,20 +1371,24 @@
 
       // 明示的な退出通知。届かなかった場合もハートビートタイムアウトで回収する。
       const sendLeave = () => {
-        if (roomParam && mqttClient && mqttClient.connected && mqttTopicHost) {
+        if (roomParam && isJoined && mqttClient && mqttClient.connected && mqttTopicHost) {
           mqttClient.publish(mqttTopicHost, JSON.stringify({ id: myClientId, type: 'leave' }));
         }
       };
       window.addEventListener('pagehide', sendLeave);
       window.addEventListener('beforeunload', sendLeave);
 
-      // バックグラウンド化・通信切断で退出通知が届かなくても、残像プレイヤーを残さない。
+      // 切断検知に加え、ブラウザを開いたまま長時間放置された参加者も回収する。
       setInterval(() => {
         if (roomParam) return;
-        const cutoff = Date.now() - 3200;
+        const now = Date.now();
         Object.values(players).forEach(p => {
-          if (!p.isBot && p.id !== myClientId && (p.lastSeenAt || 0) < cutoff) {
-            removePlayerFromGame(p.id, true);
+          if (p.isBot || p.id === myClientId) return;
+          const disconnected = now - (p.lastSeenAt || 0) > 12000;
+          const inactive = !p.eliminated && now - (p.lastActivityAt || p.lastSeenAt || now) > INACTIVE_PLAYER_TIMEOUT_MS;
+          if (disconnected || inactive) {
+            spawnDanmaku(`👋 ${p.name} は${disconnected ? '通信切断' : '長時間離席'}のため退出`, '#93c5fd');
+            removePlayerFromGame(p.id, false);
           }
         });
       }, 1000);
@@ -1258,8 +1404,8 @@
         players: Object.values(players).map(p => ({
           id: p.id, name: p.name, face: p.face, color: p.color, isBot: p.isBot,
           x: p.x, y: p.y, z: p.z, vx: p.vx, vy: p.vy, vz: p.vz,
-          angle: p.angle, score: p.score, spinCd: p.spinCd,
-          diveTimer: p.diveTimer, spinAnimTimer: p.spinAnimTimer
+          angle: p.angle, score: p.score, lives: p.lives, eliminated: !!p.eliminated, spinCd: p.spinCd,
+          diveTimer: p.diveTimer, diveCd: p.diveCd, spinAnimTimer: p.spinAnimTimer
         })),
         crown: { holderId: crownState.holderId, x: crownState.x, z: crownState.z, angle: crownState.angle },
       };
@@ -1286,17 +1432,24 @@
         const oldColor = p.color;
         p.color = snap.color || p.color;
         p.isBot = !!snap.isBot;
-        ['x', 'y', 'z', 'vx', 'vy', 'vz', 'angle', 'score', 'spinCd', 'diveTimer', 'spinAnimTimer'].forEach(k => {
+        p.lives = Number.isFinite(snap.lives) ? snap.lives : (p.isBot ? 1 : 2);
+        p.eliminated = !!snap.eliminated;
+        ['x', 'y', 'z', 'vx', 'vy', 'vz', 'angle', 'score', 'spinCd', 'diveTimer', 'diveCd', 'spinAnimTimer'].forEach(k => {
           if (typeof snap[k] === 'number') p[k] = snap[k];
         });
         p.targetX = p.x; p.targetY = p.y; p.targetZ = p.z;
         p.snapshotReceivedAt = performance.now();
         p.lastSeenAt = Date.now();
         if (roomParam && oldColor !== p.color && p.mesh) {
-          scene.remove(p.mesh);
+          if (p.mesh.parent) scene.remove(p.mesh);
           p.mesh = createChibiCharacterMesh(p.color);
-          scene.add(p.mesh);
           p.renderInitialized = false;
+        }
+        if (p.eliminated) {
+          if (p.mesh && p.mesh.parent) scene.remove(p.mesh);
+        } else if (p.mesh && !p.mesh.parent) {
+          scene.add(p.mesh);
+          p.mesh.visible = true;
         }
         if (!roomParam && p.mesh) {
           p.mesh.position.set(p.x, p.y, p.z);
@@ -1315,14 +1468,29 @@
       updateRankingUI();
       updateBotCountUI();
       const countEl = document.getElementById('ctrl-player-count');
-      if (countEl) countEl.textContent = `${state.players.length}人参加中`;
+      const aliveCount = state.players.filter(p => !p.eliminated).length;
+      if (countEl) countEl.textContent = `${aliveCount}人生存 / ${state.players.length}人`;
       const me = state.players.find(p => p.id === myClientId);
       if (me) {
-        document.getElementById('ctrl-score-num').textContent = me.score ?? 0;
+        isJoined = true;
+        localGameOver = !!me.eliminated;
+        if (localGameOver) {
+          joyVec.x = 0; joyVec.y = 0;
+          const knob = document.getElementById('joy-knob');
+          if (knob) knob.style.transform = 'translate(0px, 0px)';
+        }
+        const scoreEl = document.getElementById('ctrl-score-num');
+        if (scoreEl) scoreEl.textContent = me.score ?? 0;
         const cdEl = document.getElementById('spin-cd-text');
-        if (cdEl) cdEl.textContent = me.spinCd > 0 ? `あと ${(me.spinCd / 60).toFixed(1)}秒` : '使用OK';
+        if (cdEl) cdEl.textContent = me.eliminated ? 'GAME OVER' : (me.spinCd > 0 ? `あと ${(me.spinCd / 60).toFixed(1)}秒` : '使用OK');
+        updateParticipationUI(me);
       } else {
-        document.getElementById('ctrl-score-num').textContent = '0';
+        const scoreEl = document.getElementById('ctrl-score-num');
+        if (scoreEl) scoreEl.textContent = '0';
+        if (isJoined && !localGameOver) {
+          isJoined = false;
+          updateParticipationUI(null);
+        }
       }
       drawMiniMap();
     }
@@ -1331,10 +1499,13 @@
       const val = document.getElementById('manual-room-input').value.trim().toUpperCase();
       if (!val) return;
       if (mqttClient && mqttClient.connected && mqttTopicHost) {
-        mqttClient.publish(mqttTopicHost, JSON.stringify({ id: myClientId, type: 'leave' }));
+        if (isJoined) mqttClient.publish(mqttTopicHost, JSON.stringify({ id: myClientId, type: 'leave' }));
         mqttClient.unsubscribe(mqttTopicHost);
         mqttClient.unsubscribe(mqttTopicState);
       }
+      isJoined = false;
+      localGameOver = false;
+      updateParticipationUI(null);
       roomCode = val;
       document.getElementById('room-code-text').textContent = roomCode;
       mqttTopicHost = `ccc-wacha-2026/${roomCode}/host`;
@@ -1342,39 +1513,79 @@
       if (mqttClient && mqttClient.connected) {
         mqttClient.subscribe(mqttTopicHost);
         mqttClient.subscribe(mqttTopicState);
-        sendControllerInput({ type: 'join' });
         document.getElementById('ctrl-sync-text').textContent = `🟢 ROOM [${roomCode}] に接続完了！`;
       }
     }
 
     function sendControllerInput(extra = {}) {
-      const name = document.getElementById('ctrl-name-input').value || 'PLAYER';
+      if (!isJoined && extra.type !== 'join' && extra.type !== 'leave') return;
+      if (localGameOver && !['leave', 'join', 'heartbeat'].includes(extra.type)) return;
+      const name = document.getElementById('ctrl-name-input').value.trim();
       const packet = {
         id: myClientId,
         name,
-        jx: Number(joyVec.x.toFixed(3)),
-        jy: Number(joyVec.y.toFixed(3)),
+        jx: Number((localGameOver ? 0 : joyVec.x).toFixed(3)),
+        jy: Number((localGameOver ? 0 : joyVec.y).toFixed(3)),
         type: 'input',
         ...extra
       };
-      // 画面上のアクションだけは入力直後に先行表示し、ゲーム判定はホスト権威のまま維持する。
-      if (roomParam && extra.action === 'spin') localVisualSpinUntil = performance.now() + 360;
-      if (roomParam && extra.action === 'dive') localVisualDiveUntil = performance.now() + 260;
+      if (roomParam && extra.action === 'spin') localVisualSpinUntil = performance.now() + 300;
+      if (roomParam && extra.action === 'dive') localVisualDiveUntil = performance.now() + 240;
       if (!roomParam) handleHostPacket(packet);
       if (roomParam && mqttClient && mqttClient.connected) {
         mqttClient.publish(mqttTopicHost, JSON.stringify(packet), { qos: 0, retain: false });
       }
     }
 
+    function uniquePlayerName(rawName, id) {
+      const base = String(rawName || '').replace(/[<>]/g, '').trim().slice(0, 14) || 'PLAYER';
+      let candidate = base;
+      let suffix = 2;
+      while (Object.values(players).some(p => p.id !== id && !p.isBot && p.name === candidate)) {
+        const tail = ` ${suffix++}`;
+        candidate = base.slice(0, Math.max(1, 14 - tail.length)) + tail;
+      }
+      return candidate;
+    }
+
     function handleHostPacket(data) {
-      if (!data || !data.id || data.type === 'leave') return;
+      if (!data || !data.id) return;
       packetsCount++;
       packetVisuals.push({ prog: 0, color: '#00f5d4' });
 
-      const p = ensurePlayer(data.id, data.name, false);
+      if (data.type === 'leave') {
+        removePlayerFromGame(data.id, true);
+        return;
+      }
+
+      if (data.type === 'join') {
+        if (eliminatedPlayerIds.has(data.id)) return;
+        const existing = players[data.id];
+        // ゲームオーバー後に同じIDで参加し直してライフをリセットすることはできない。
+        if (existing && existing.eliminated) return;
+        const safeName = uniquePlayerName(data.name, data.id);
+        const p = ensurePlayer(data.id, safeName, false);
+        p.name = safeName;
+        p.lastSeenAt = Date.now();
+        p.lastActivityAt = Date.now();
+        p.eliminated = false;
+        if (!Number.isFinite(p.lives)) p.lives = 2;
+        if (typeof data.jx === 'number') p.joyX = data.jx;
+        if (typeof data.jy === 'number') p.joyY = data.jy;
+        spawnDanmaku(`🎮 ${p.name} が参加！`, p.color);
+        updateRankingUI();
+        return;
+      }
+
+      // 名前を入力して「参加する」を押すまでは、入力パケットからキャラクターを生成しない。
+      const p = players[data.id];
+      if (!p) return;
       p.lastSeenAt = Date.now();
+      if (p.eliminated) return;
       if (typeof data.jx === 'number') p.joyX = data.jx;
       if (typeof data.jy === 'number') p.joyY = data.jy;
+      if (Math.hypot(p.joyX, p.joyY) > 0.08 || data.action || data.reaction) p.lastActivityAt = Date.now();
+      if (typeof data.name === 'string' && data.name.trim()) p.name = uniquePlayerName(data.name, p.id);
 
       if (data.action === 'dive') doDive(p);
       if (data.action === 'spin') doSpinAttack(p);
@@ -1383,7 +1594,7 @@
         showFloatingText(p.x, p.y + 3.2, p.z, data.reaction, '#ffffff');
       }
 
-      if (Math.random() < 0.25) {
+      if (Math.random() < 0.18) {
         const logBox = document.getElementById('packet-log');
         if (logBox) {
           const line = document.createElement('div');
@@ -1394,7 +1605,60 @@
       }
     }
 
-    function sendProfileUpdate() { sendControllerInput({ type: 'profile' }); }
+    function updateParticipationUI(player = null) {
+      const nameInput = document.getElementById('ctrl-name-input');
+      const joinButton = document.getElementById('btn-join-leave');
+      const livesEl = document.getElementById('ctrl-lives');
+      const statusEl = document.getElementById('ctrl-game-status');
+      if (nameInput) nameInput.disabled = isJoined;
+      if (joinButton) {
+        joinButton.textContent = isJoined ? '退出する' : '参加する';
+        joinButton.className = `arcade-btn ${isJoined ? 'bg-rose-500 hover:bg-rose-400 text-white' : 'bg-emerald-400 hover:bg-emerald-300 text-slate-950'} font-black text-xs px-3 py-1.5 rounded-xl`;
+      }
+      if (livesEl) {
+        const lives = player ? Math.max(0, Number(player.lives) || 0) : 2;
+        livesEl.textContent = player?.eliminated ? '残りライフ：0（OUT）' : (!player && !isJoined ? '残りライフ：未参加' : `残りライフ：${'❤️'.repeat(lives)}${lives ? ` ${lives}/2` : ''}`);
+      }
+      if (statusEl) {
+        if (player?.eliminated || localGameOver) statusEl.textContent = '💀 2回転落でゲームオーバー（リセット待ち）';
+        else if (isJoined) statusEl.textContent = '🟢 参加中！2回落ちるとゲームオーバー';
+        else statusEl.textContent = '名前を入力して「参加する」を押してください';
+      }
+    }
+
+    function toggleParticipation() {
+      if (isJoined) {
+        sendControllerInput({ type: 'leave' });
+        isJoined = false;
+        localGameOver = false;
+        joyVec.x = 0; joyVec.y = 0;
+        const knob = document.getElementById('joy-knob');
+        if (knob) knob.style.transform = 'translate(0px, 0px)';
+        updateParticipationUI(null);
+        const sync = document.getElementById('ctrl-sync-text');
+        if (sync) sync.textContent = '⚪ 退出しました';
+        return;
+      }
+      const input = document.getElementById('ctrl-name-input');
+      const typed = (input?.value || '').trim();
+      if (!typed) {
+        if (input) { input.focus(); input.placeholder = '先に名前を入力！'; }
+        const statusEl = document.getElementById('ctrl-game-status');
+        if (statusEl) statusEl.textContent = '名前を入力してから参加してください';
+        return;
+      }
+      isJoined = true;
+      localGameOver = false;
+      if (input) input.value = typed.slice(0, 14);
+      updateParticipationUI(null);
+      const statusEl = document.getElementById('ctrl-game-status');
+      if (statusEl) statusEl.textContent = '参加申請中…';
+      sendControllerInput({ type: 'join' });
+      const sync = document.getElementById('ctrl-sync-text');
+      if (sync && roomParam) sync.textContent = `🟡 ROOM [${roomCode}] に参加申請中…`;
+    }
+
+    function sendProfileUpdate() { if (isJoined) sendControllerInput({ type: 'profile' }); }
     function sendReaction(msg) { sendControllerInput({ reaction: msg }); }
 
     // ============================================================================
@@ -1435,6 +1699,7 @@
       }
 
       zone.addEventListener('pointerdown', e => {
+        if (!isJoined || localGameOver) return;
         dragging = true;
         zone.setPointerCapture(e.pointerId);
         updateKnob(e.clientX, e.clientY);
@@ -1449,16 +1714,18 @@
 
       document.getElementById('btn-dive').addEventListener('pointerdown', e => {
         e.preventDefault();
+        if (!isJoined || localGameOver) return;
         sendControllerInput({ action: 'dive' });
       });
       document.getElementById('btn-spin').addEventListener('pointerdown', e => {
         e.preventDefault();
+        if (!isJoined || localGameOver) return;
         sendControllerInput({ action: 'spin' });
       });
 
       const keys = {};
       window.addEventListener('keydown', e => {
-        if (document.activeElement.tagName === 'INPUT') return;
+        if (document.activeElement.tagName === 'INPUT' || !isJoined || localGameOver) return;
         keys[e.code] = true;
         if (e.code === 'ShiftLeft' || e.code === 'KeyZ') sendControllerInput({ action: 'dive' });
         if (e.code === 'Enter' || e.code === 'KeyX') sendControllerInput({ action: 'spin' });
@@ -1481,6 +1748,7 @@
       }
 
       setInterval(() => {
+        if (!isJoined) return;
         const now = performance.now();
         const moving = Math.abs(joyVec.x) > 0.015 || Math.abs(joyVec.y) > 0.015;
         const changed = Math.abs(joyVec.x - lastSentX) > 0.025 || Math.abs(joyVec.y - lastSentY) > 0.025;
@@ -1499,7 +1767,7 @@
       const me = players[myClientId];
       const frameScale = Math.min(2, Math.max(0.5, elapsedMs / (1000 / 60)));
       const ageFrames = Math.min(8, Math.max(0, (now - lastSnapshotReceivedAt) / (1000 / 60)));
-      let focusX = 0, focusY = 0, focusZ = 0, focusAngle = 0;
+      let focusX = 0, focusY = 0, focusZ = 0;
 
       Object.values(players).forEach(p => {
         // Snapshot間は速度を使って短時間だけ前方予測。ローカル入力はさらに先行反映する。
@@ -1536,23 +1804,22 @@
         }
       });
 
-      if (me) {
+      if (me && !me.eliminated) {
         focusX = me.renderX; focusY = me.renderY; focusZ = me.renderZ;
-        focusAngle = (Math.hypot(joyVec.x, joyVec.y) > 0.12)
-          ? Math.atan2(joyVec.x, joyVec.y)
-          : me.angle;
+      } else {
+        focusX = 0; focusY = 0; focusZ = 0;
       }
 
-      // キャラの後方・少し高い位置から追尾。カメラも補間して酔いにくくする。
-      const fx = Math.sin(focusAngle), fz = Math.cos(focusAngle);
-      const desiredX = focusX - fx * 8.2;
-      const desiredY = focusY + 5.3;
-      const desiredZ = focusZ - fz * 8.2;
-      const cameraSmooth = 1 - Math.pow(0.76, frameScale);
+      // 展示画面と同じ「ワールド +Z 側から中央を見る」向きを固定したまま、位置だけ追従。
+      // キャラの進行方向に合わせてカメラを回転させないので、向きがぐるぐる変わらない。
+      const desiredX = focusX;
+      const desiredY = focusY + 13.0;
+      const desiredZ = focusZ + 20.0;
+      const cameraSmooth = 1 - Math.pow(0.70, frameScale);
       camera.position.x += (desiredX - camera.position.x) * cameraSmooth;
       camera.position.y += (desiredY - camera.position.y) * cameraSmooth;
       camera.position.z += (desiredZ - camera.position.z) * cameraSmooth;
-      camera.lookAt(focusX + fx * 2.1, focusY + 1.25, focusZ + fz * 2.1);
+      camera.lookAt(focusX, focusY + 1.0, focusZ);
 
       // 持ち主がいる場合も王冠を追従させる。
       const holder = crownState.holderId ? players[crownState.holderId] : null;
@@ -1673,8 +1940,8 @@
     // ============================================================================
     window.addEventListener('DOMContentLoaded', () => {
       if (roomParam) document.body.classList.add('remote-controller');
-      const randNum = Math.floor(10 + Math.random() * 89);
-      document.getElementById('ctrl-name-input').value = `P_${randNum}`;
+      document.getElementById('ctrl-name-input').value = '';
+      updateParticipationUI(null);
 
       initThreeStage();
       initControllerPad();
