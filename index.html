@@ -1,1783 +1,1449 @@
 <!DOCTYPE html>
-<html lang="ja" class="dark">
+<html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D CYBER KNOCKOUT ARENA | Computer Communication Circle</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Three.js (3D WebGL Engine) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- MQTT.js (Firewall-Proof WebSocket Relay Transport) -->
-    <script src="https://unpkg.com/mqtt@5.3.4/dist/mqtt.min.js"></script>
-    <!-- PeerJS (WebRTC P2P Direct Transport) -->
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <!-- QRCode.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Noto+Sans+JP:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['"Noto Sans JP"', 'sans-serif'],
-                        cyber: ['"Orbitron"', 'sans-serif'],
-                        mono: ['"JetBrains Mono"', 'monospace'],
-                    },
-                    colors: {
-                        cyber: {
-                            bg: '#040711',
-                            panel: '#0b1120',
-                            neon: '#00f3ff',
-                            pink: '#ff007f',
-                            lime: '#00ff66',
-                            amber: '#ffb800'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-
-    <style>
-        body {
-            background-color: #040711;
-            color: #f1f5f9;
-            overflow: hidden;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: none;
-        }
-
-        .neon-border {
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.25), inset 0 0 12px rgba(0, 243, 255, 0.08);
-            border: 1px solid rgba(0, 243, 255, 0.45);
-        }
-
-        .neon-text {
-            text-shadow: 0 0 12px rgba(0, 243, 255, 0.9), 0 0 24px rgba(0, 243, 255, 0.4);
-        }
-
-        /* Danmaku Animation */
-        @keyframes danmakuMove {
-            from { transform: translateX(100vw); }
-            to { transform: translateX(-120%); }
-        }
-        .danmaku-item {
-            position: absolute;
-            white-space: nowrap;
-            pointer-events: none;
-            z-index: 40;
-            animation: danmakuMove 6s linear forwards;
-            text-shadow: 2px 2px 0px #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
-        }
-
-        /* 3D Player Floating Labels */
-        .player-label-3d {
-            position: absolute;
-            transform: translate(-50%, -100%);
-            pointer-events: none;
-            white-space: nowrap;
-            z-index: 15;
-            transition: opacity 0.1s;
-        }
-
-        /* Arcade Buttons */
-        .arcade-btn {
-            transition: transform 0.05s ease, filter 0.05s ease;
-        }
-        .arcade-btn:active {
-            transform: scale(0.90) translateY(3px);
-            filter: brightness(1.25);
-        }
-
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-track { background: #040711; }
-        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 2px; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>WACHA-WACHA 3D KNOCKOUT! - 学園祭パーティバトル</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Blenderの .glb / .gltf モデルを読み込むための公式ローダー -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #1a103c; color: #fff; font-family: 'M PLUS Rounded 1c', sans-serif; touch-action: none; }
+    .font-arcade { font-family: 'Orbitron', 'M PLUS Rounded 1c', sans-serif; }
+    .pop-panel { background: rgba(26, 16, 60, 0.88); backdrop-filter: blur(10px); border: 3px solid rgba(255, 255, 255, 0.25); box-shadow: 0 8px 0 rgba(0, 0, 0, 0.4), 0 0 25px rgba(236, 72, 153, 0.3); border-radius: 18px; }
+    .arcade-btn { box-shadow: 0 5px 0 rgba(0,0,0,0.5); transition: transform 0.08s, box-shadow 0.08s; }
+    .arcade-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 rgba(0,0,0,0.5); }
+    @keyframes floatPop {
+      0% { transform: translate(-50%, 0) scale(0.7); opacity: 1; }
+      30% { transform: translate(-50%, -18px) scale(1.15); opacity: 1; }
+      100% { transform: translate(-50%, -55px) scale(0.95); opacity: 0; }
+    }
+    .floating-score { position: absolute; pointer-events: none; animation: floatPop 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards; font-weight: 900; text-shadow: 0 3px 0 #000, 0 0 10px rgba(0,0,0,0.8); z-index: 40; white-space: nowrap; }
+    @keyframes danmakuMove {
+      from { transform: translateX(100vw); }
+      to { transform: translateX(-120%); }
+    }
+    .danmaku-item { position: absolute; white-space: nowrap; font-weight: 900; text-shadow: 0 4px 0 #000; pointer-events: none; animation: danmakuMove 6.5s linear forwards; z-index: 45; }
+  </style>
 </head>
-<body class="h-screen w-screen flex flex-col justify-between bg-slate-950">
+<body class="flex flex-col h-screen w-screen overflow-hidden">
 
-    <!-- ================= TOP BAR ================= -->
-    <header class="bg-slate-900/95 border-b border-cyan-500/30 px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 z-50 shrink-0">
-        <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-lg bg-cyan-500/15 border border-cyan-400 flex items-center justify-center text-cyan-400 shadow-[0_0_12px_rgba(0,243,255,0.4)]">
-                <i class="fa-solid fa-cubes text-base"></i>
-            </div>
-            <div>
-                <div class="flex items-center gap-2">
-                    <span class="font-cyber font-black text-sm md:text-base tracking-wider text-white">3D CYBER KNOCKOUT</span>
-                    <span class="text-[10px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.5 rounded font-bold">WSS + WebRTC HYBRID</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Mode & Camera Controls -->
-        <div class="flex items-center gap-1.5 flex-wrap">
-            <div class="bg-slate-950 p-0.5 rounded-lg border border-slate-700 flex items-center text-[11px]">
-                <button id="btnModeHost" onclick="switchAppMode('host')" class="px-2.5 py-1 rounded-md font-bold transition flex items-center gap-1">
-                    <i class="fa-solid fa-tv"></i> 展示3D大画面
-                </button>
-                <button id="btnModeSplit" onclick="switchAppMode('split')" class="px-2.5 py-1 rounded-md font-bold transition flex items-center gap-1">
-                    <i class="fa-solid fa-columns"></i> 分割テスト
-                </button>
-                <button id="btnModeController" onclick="switchAppMode('controller')" class="px-2.5 py-1 rounded-md font-bold transition flex items-center gap-1">
-                    <i class="fa-solid fa-gamepad"></i> スマホ画面
-                </button>
-            </div>
-
-            <button onclick="cycleCameraMode()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-[11px] font-bold text-cyan-300 flex items-center gap-1 transition" title="3Dカメラアングル切替">
-                <i class="fa-solid fa-video"></i> <span id="camModeLabel" class="hidden sm:inline">Dynamic Cam</span>
-            </button>
-
-            <button id="btnAudioToggle" onclick="toggleAudio()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-[11px] font-bold text-cyan-300 flex items-center gap-1 transition">
-                <i id="iconAudio" class="fa-solid fa-volume-high"></i> <span class="hidden md:inline">SE</span>
-            </button>
-        </div>
-    </header>
-
-    <!-- ================= MAIN WORKSPACE ================= -->
-    <main class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
-
-        <!-- ================= LEFT: 3D HOST ARENA VIEW ================= -->
-        <section id="hostSection" class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
-            
-            <!-- Left Telemetry & QR Sidebar -->
-            <div class="w-full md:w-72 bg-slate-900/95 border-b md:border-b-0 md:border-r border-slate-800 p-2.5 flex flex-col gap-2.5 z-20 shrink-0 overflow-y-auto">
-                
-                <!-- QR Code & 4-Digit Room Code Card -->
-                <div class="bg-slate-950 neon-border rounded-xl p-2.5 flex flex-col gap-2">
-                    <div class="flex items-center justify-between">
-                        <span class="font-cyber text-[11px] font-bold text-cyan-300 flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> スマホでQRスキャン参戦
-                        </span>
-                        <span id="netStatusBadge" class="text-[9px] font-mono bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/40">WSS Connected</span>
-                    </div>
-
-                    <div class="flex items-center gap-2.5">
-                        <!-- QR Code -->
-                        <div class="bg-white p-1.5 rounded-lg shrink-0 shadow cursor-pointer relative group" onclick="copyJoinUrl()" title="クリックで参加URLをコピー">
-                            <div id="qrcode"></div>
-                        </div>
-
-                        <!-- Room Number & Quick Buttons -->
-                        <div class="flex-1 min-w-0 flex flex-col gap-1">
-                            <div class="bg-slate-900 border border-cyan-500/40 rounded-lg px-2.5 py-1 text-center">
-                                <div class="text-[9px] text-slate-400 font-mono">ROOM CODE (4桁)</div>
-                                <div id="displayRoomId" class="font-cyber font-black text-xl text-amber-400 tracking-widest">----</div>
-                            </div>
-                            <button onclick="copyJoinUrl()" class="w-full bg-slate-800 hover:bg-slate-700 text-cyan-300 text-[10px] py-1 px-2 rounded border border-slate-700 font-bold transition flex items-center justify-center gap-1">
-                                <i class="fa-solid fa-link"></i> 参加URLコピー
-                            </button>
-                            <button onclick="addAiBot()" class="w-full bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 text-[10px] py-1 px-2 rounded border border-purple-500/50 font-bold transition flex items-center justify-center gap-1">
-                                <i class="fa-solid fa-robot"></i> +3D AIボット追加
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Game Match Controls -->
-                <div class="bg-slate-950 border border-slate-800 rounded-xl p-2.5 flex flex-col gap-2">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <div class="text-[9px] font-mono text-slate-400">STAGE EVENT / TIMER</div>
-                            <div id="eventStatusLabel" class="font-cyber font-bold text-xs text-emerald-400">FREE BATTLE</div>
-                        </div>
-                        <div id="matchTimerDisplay" class="font-cyber font-black text-lg text-amber-400">∞</div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-1.5">
-                        <button onclick="startTimedMatch(90)" class="col-span-2 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs shadow-[0_0_12px_rgba(0,243,255,0.4)] transition flex items-center justify-center gap-1">
-                            <i class="fa-solid fa-fire"></i> 90秒 3Dサバイバル開始！
-                        </button>
-                        <button onclick="triggerStageEvent('BOSS')" class="py-1 rounded bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 font-bold text-[10px] transition">
-                            👾 ボス召喚
-                        </button>
-                        <button onclick="triggerStageEvent('METEOR')" class="py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-bold text-[10px] transition">
-                            ⭐ スター放出
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Communication Circle Telemetry Visualizer -->
-                <div class="bg-slate-950 border border-slate-800 rounded-xl p-2.5 flex-1 flex flex-col gap-1.5 min-h-[160px] hidden md:flex">
-                    <div class="flex items-center justify-between border-b border-slate-800 pb-1">
-                        <span class="font-cyber text-[10px] font-bold text-cyan-400 flex items-center gap-1">
-                            <i class="fa-solid fa-satellite-dish"></i> PACKET TELEMETRY
-                        </span>
-                        <span class="font-mono text-[10px] text-emerald-400"><span id="statPktRate">0</span> pkt/s</span>
-                    </div>
-                    <div class="text-[9px] font-mono text-slate-400 flex items-center justify-between">
-                        <span>MQTT WSS + WebRTC</span>
-                        <span id="activeNodesCount" class="text-cyan-300">0 Nodes</span>
-                    </div>
-                    <div id="packetLogContainer" class="flex-1 bg-slate-900/90 rounded border border-slate-800 p-1.5 font-mono text-[9px] overflow-y-auto space-y-0.5">
-                        <div class="text-slate-500">[SYS] Hybrid WSS/WebRTC Ready...</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Center: 3D WebGL Viewport -->
-            <div id="threeViewport" class="flex-1 bg-slate-950 relative overflow-hidden min-h-[320px]">
-                <!-- Three.js Canvas mounts here -->
-                <div id="threeCanvasContainer" class="absolute inset-0"></div>
-
-                <!-- 3D Floating HTML Labels Layer -->
-                <div id="labels3DLayer" class="absolute inset-0 pointer-events-none overflow-hidden"></div>
-
-                <!-- Danmaku Layer -->
-                <div id="danmakuLayer" class="absolute inset-0 pointer-events-none overflow-hidden"></div>
-
-                <!-- Top Center Event Banner -->
-                <div id="eventAlertBanner" class="hidden absolute top-3 left-1/2 -translate-x-1/2 bg-rose-600/90 backdrop-blur-md border-2 border-rose-300 text-white px-5 py-1.5 rounded-full font-cyber font-black text-xs md:text-sm tracking-wider shadow-[0_0_25px_rgba(255,0,127,0.8)] z-30 animate-bounce">
-                    ⚠️ STAGE EVENT!
-                </div>
-
-                <!-- Top Right Leaderboard Overlay -->
-                <div class="absolute top-3 right-3 bg-slate-900/85 backdrop-blur-md border border-cyan-500/30 rounded-xl p-2.5 w-48 pointer-events-auto shadow-2xl z-20">
-                    <div class="flex items-center justify-between border-b border-slate-800 pb-1 mb-1.5">
-                        <span class="font-cyber text-[10px] font-bold text-amber-400 flex items-center gap-1">
-                            <i class="fa-solid fa-trophy"></i> 3D RANKING
-                        </span>
-                        <button onclick="resetScores()" class="text-[9px] text-slate-400 hover:text-white" title="スコアリセット">
-                            <i class="fa-solid fa-rotate-right"></i>
-                        </button>
-                    </div>
-                    <div id="leaderboardList" class="space-y-1 max-h-40 overflow-y-auto text-[11px]"></div>
-                </div>
-
-                <!-- Bottom Left Controls & Rules Guide -->
-                <div class="absolute bottom-2.5 left-3 bg-slate-900/80 backdrop-blur-sm border border-slate-800 rounded-lg px-3 py-1.5 pointer-events-none hidden sm:flex flex-wrap items-center gap-3 text-[11px] text-slate-300 z-20">
-                    <span class="text-cyan-300 font-bold"><i class="fa-solid fa-burst"></i> 敵をステージ外へ突き落とすと +300pt ＆ コイン強奪！</span>
-                    <span><strong class="text-pink-400">A:</strong> レーザー衝撃波</span>
-                    <span><strong class="text-emerald-400">B:</strong> ターボ体当たり</span>
-                    <span><strong class="text-amber-400">Y:</strong> 3Dジャンプ回避</span>
-                </div>
-
-                <!-- Winner Overlay -->
-                <div id="winnerOverlay" class="hidden absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center z-40 p-6 text-center">
-                    <div class="text-amber-400 text-5xl mb-2 animate-bounce"><i class="fa-solid fa-crown"></i></div>
-                    <div class="font-cyber text-xs tracking-widest text-cyan-400 uppercase mb-1">3D CYBER ARENA CHAMPION</div>
-                    <h2 id="winnerName" class="text-3xl md:text-5xl font-black text-white mb-2 neon-text">PLAYER 1</h2>
-                    <p id="winnerScore" class="font-mono text-xl text-amber-300 mb-6">SCORE: 1200 PTS</p>
-                    <div class="flex gap-3">
-                        <button onclick="closeWinnerOverlay()" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-slate-600">
-                            フリープレイへ
-                        </button>
-                        <button onclick="startTimedMatch(90)" class="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs shadow-[0_0_20px_rgba(0,243,255,0.5)]">
-                            もう1戦バトル！
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ================= RIGHT / MOBILE: SMARTPHONE 3D GAMEPAD ================= -->
-        <section id="controllerSection" class="w-full lg:w-[400px] xl:w-[420px] bg-slate-900 border-t lg:border-t-0 lg:border-l border-cyan-500/40 flex flex-col justify-between p-3 shrink-0 select-none z-30">
-            
-            <!-- Top Connection Status & Room Sync Bar -->
-            <div class="bg-slate-950 border border-slate-800 rounded-xl p-2.5 space-y-2">
-                <!-- Big Clear Sync Status Banner -->
-                <div id="ctrlSyncBanner" class="bg-emerald-500/15 border border-emerald-500/50 rounded-lg px-3 py-1.5 flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <span id="ctrlConnDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
-                        <span id="ctrlConnText" class="font-bold text-xs text-emerald-300">同期完了！ (3Dアリーナ接続中)</span>
-                    </div>
-                    <span class="font-mono text-[10px] text-cyan-300">PING: <strong id="ctrlPingDisplay">12</strong>ms</span>
-                </div>
-
-                <!-- Room Code & Nickname Row -->
-                <div class="grid grid-cols-12 gap-2 items-end">
-                    <div class="col-span-5">
-                        <label class="text-[9px] text-slate-400 font-mono block">ROOM番号 (4桁)</label>
-                        <div class="flex gap-1">
-                            <input id="inputRemoteRoomId" type="text" maxlength="6" placeholder="4桁"
-                                class="w-full bg-slate-900 border border-amber-500/50 rounded px-2 py-1 text-xs font-cyber font-bold text-amber-300 text-center uppercase outline-none">
-                            <button onclick="connectControllerToRoom()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-2 py-1 rounded text-[10px] shrink-0">
-                                同期
-                            </button>
-                        </div>
-                    </div>
-                    <div class="col-span-4">
-                        <label class="text-[9px] text-slate-400 font-mono block">NICKNAME</label>
-                        <input id="ctrlPlayerName" type="text" maxlength="9" value="Player_01" onchange="updateControllerProfile()"
-                            class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded px-2 py-1 text-xs font-bold text-white outline-none">
-                    </div>
-                    <div class="col-span-3">
-                        <label class="text-[9px] text-slate-400 font-mono block">COLOR</label>
-                        <div class="flex items-center justify-between bg-slate-900 border border-slate-700 rounded p-1">
-                            <button onclick="selectControllerColor('#00f3ff')" class="w-4 h-4 rounded-full bg-[#00f3ff]"></button>
-                            <button onclick="selectControllerColor('#ff007f')" class="w-4 h-4 rounded-full bg-[#ff007f]"></button>
-                            <button onclick="selectControllerColor('#00ff66')" class="w-4 h-4 rounded-full bg-[#00ff66]"></button>
-                            <button onclick="selectControllerColor('#ffb800')" class="w-4 h-4 rounded-full bg-[#ffb800]"></button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Player Live Score & Quick Danmaku Bar -->
-            <div class="my-2 bg-slate-950 border border-cyan-500/30 rounded-xl p-2 flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <div id="ctrlAvatarPreview" class="w-8 h-8 rounded-lg bg-cyan-400 shadow-[0_0_10px_#00f3ff] flex items-center justify-center text-slate-950 font-cyber font-black text-xs">
-                        3D
-                    </div>
-                    <div>
-                        <div class="text-[9px] text-slate-400 font-mono">SCORE / KOs</div>
-                        <div class="font-cyber font-black text-base text-white">
-                            <span id="ctrlMyScore">0</span> <span class="text-[10px] text-cyan-400">PT</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex gap-1">
-                    <button onclick="sendDanmaku('🔥 吹っ飛べー!!')" class="bg-slate-800 active:scale-90 border border-slate-700 rounded px-2 py-1 text-xs">🔥</button>
-                    <button onclick="sendDanmaku('💥 場外KO!!')" class="bg-slate-800 active:scale-90 border border-slate-700 rounded px-2 py-1 text-xs">💥</button>
-                    <button onclick="sendDanmaku('🚀 3D神ゲー!')" class="bg-slate-800 active:scale-90 border border-slate-700 rounded px-2 py-1 text-xs">🚀</button>
-                    <button onclick="sendDanmaku('👾 ボス倒せ!!')" class="bg-slate-800 active:scale-90 border border-slate-700 rounded px-2 py-1 text-xs">👾</button>
-                </div>
-            </div>
-
-            <!-- MAIN 3D GAMEPAD TOUCH AREA -->
-            <div class="flex-1 bg-slate-950 neon-border rounded-2xl p-3 flex items-center justify-between gap-2 relative min-h-[210px]">
-                <div class="absolute top-1.5 left-3 text-[9px] font-mono text-slate-500">
-                    3D ANALOG STICK (ドラッグ / WASDキー)
-                </div>
-
-                <!-- Left: Analog Stick -->
-                <div class="flex flex-col items-center justify-center pl-1">
-                    <div id="joystickZone" class="w-32 h-32 sm:w-36 sm:h-36 rounded-full bg-slate-900 border-2 border-cyan-500/40 shadow-[inset_0_0_20px_rgba(0,243,255,0.15)] relative flex items-center justify-center touch-none">
-                        <div class="absolute inset-x-3 h-px bg-slate-800 pointer-events-none"></div>
-                        <div class="absolute inset-y-3 w-px bg-slate-800 pointer-events-none"></div>
-                        <div id="joystickKnob" class="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 shadow-[0_0_15px_rgba(0,243,255,0.9)] border-2 border-white pointer-events-none flex items-center justify-center">
-                            <i class="fa-solid fa-location-crosshairs text-slate-950 text-xs"></i>
-                        </div>
-                    </div>
-                    <div id="joystickCoordText" class="font-mono text-[9px] text-cyan-400 mt-1">X:0.0 Y:0.0</div>
-                </div>
-
-                <!-- Right: 3D Action Buttons (Y = Jump, A = Shockwave Laser, B = Dash Ram) -->
-                <div class="flex flex-col items-center justify-center gap-2 pr-1">
-                    <!-- Y Button: 3D Jump -->
-                    <button onpointerdown="triggerControllerAction('JUMP')"
-                        class="arcade-btn w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-orange-600 border-2 border-amber-200 shadow-[0_0_15px_rgba(255,184,0,0.6)] flex flex-col items-center justify-center text-slate-950 select-none touch-none -ml-6">
-                        <span class="font-cyber font-black text-base leading-none">Y</span>
-                        <span class="text-[9px] font-black">ジャンプ</span>
-                    </button>
-
-                    <div class="flex items-center gap-2.5">
-                        <!-- B Button: Turbo Ram -->
-                        <button onpointerdown="triggerControllerAction('DASH')"
-                            class="arcade-btn w-16 h-16 sm:w-18 sm:h-18 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 border-2 border-emerald-200 shadow-[0_0_15px_rgba(0,255,102,0.5)] flex flex-col items-center justify-center text-slate-950 select-none touch-none">
-                            <span class="font-cyber font-black text-lg leading-none">B</span>
-                            <span class="text-[9px] font-black">ダッシュ体当</span>
-                        </button>
-
-                        <!-- A Button: Laser Shockwave -->
-                        <button onpointerdown="triggerControllerAction('PULSE')"
-                            class="arcade-btn w-20 h-20 sm:w-22 sm:h-22 rounded-full bg-gradient-to-br from-pink-500 to-rose-700 border-4 border-pink-200 shadow-[0_0_20px_rgba(255,0,127,0.7)] flex flex-col items-center justify-center text-white select-none touch-none">
-                            <span class="font-cyber font-black text-xl leading-none">A</span>
-                            <span class="text-[9px] font-bold mt-0.5">レーザー衝撃波</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Custom Danmaku Input -->
-            <div class="mt-2 flex gap-1.5">
-                <input id="customDanmakuInput" type="text" maxlength="24" placeholder="3D空間に弾幕コメントを流す..."
-                    onkeydown="if(event.key==='Enter') sendCustomDanmaku()"
-                    class="flex-1 bg-slate-950 border border-slate-800 focus:border-cyan-400 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none">
-                <button onclick="sendCustomDanmaku()" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black px-3 py-1.5 rounded-lg text-xs shrink-0">
-                    送信
-                </button>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- Toast Notification -->
-    <div id="toastNotice" class="fixed bottom-4 right-4 bg-slate-900 neon-border text-cyan-300 px-4 py-2 rounded-xl text-xs font-bold shadow-2xl transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-2 pointer-events-none">
-        <i class="fa-solid fa-bolt text-amber-400"></i>
-        <span id="toastMessage">通知</span>
+  <!-- 上部アーケードヘッダー -->
+  <header id="top-bar" class="h-14 bg-gradient-to-r from-indigo-950 via-purple-900 to-pink-900 border-b-4 border-pink-500/60 px-3 flex items-center justify-between z-50 shrink-0 shadow-lg">
+    <div class="flex items-center gap-2.5">
+      <div class="w-4 h-4 rounded-full bg-yellow-400 animate-bounce shadow-[0_0_12px_#facc15]" id="net-led"></div>
+      <h1 class="font-black text-base md:text-xl tracking-wider text-white drop-shadow-[0_3px_0_#000]">
+        🎪 WACHA-WACHA <span class="text-yellow-300">KNOCKOUT!</span>
+      </h1>
+      <span id="conn-badge" class="text-[11px] bg-black/50 text-emerald-300 border border-emerald-400/50 px-2.5 py-0.5 rounded-full font-bold">SYNC READY</span>
     </div>
 
-    <!-- ================= APPLICATION LOGIC ================= -->
-    <script>
-        /******************************************************************
-         * 1. PROCEDURAL WEB AUDIO SYNTHESIZER (No external audio files)
-         ******************************************************************/
-        let audioCtx = null;
-        let soundEnabled = true;
+    <div class="flex items-center gap-1.5 md:gap-2">
+      <!-- Blender (.glb) テスト読み込みボタン -->
+      <label id="glb-upload-label" class="arcade-btn cursor-pointer text-xs px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black flex items-center gap-1">
+        📁 3Dモデル(.glb)読込
+        <input type="file" id="glb-file-input" accept=".glb,.gltf" class="hidden" onchange="handleLocalGLBUpload(event)" />
+      </label>
+      <button onclick="switchViewMode('split')" id="btn-mode-split" class="arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-pink-500 text-white font-black">分割テスト</button>
+      <button onclick="switchViewMode('host')" id="btn-mode-host" class="arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-indigo-800 text-indigo-100 font-bold hover:bg-indigo-700">展示大画面</button>
+      <button onclick="switchViewMode('controller')" id="btn-mode-ctrl" class="arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-indigo-800 text-indigo-100 font-bold hover:bg-indigo-700">スマホ画面</button>
+      <button onclick="toggleAudio()" id="btn-audio" class="arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-black">🔊 効果音ON</button>
+    </div>
+  </header>
 
-        function initAudio() {
-            if (!audioCtx) {
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                if (AudioContext) audioCtx = new AudioContext();
-            }
-            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  <!-- メインコンテナ -->
+  <div id="main-wrapper" class="flex-1 flex flex-col lg:flex-row relative overflow-hidden">
+
+    <!-- ================= 展示用3D大画面 (HOST) ================= -->
+    <div id="host-section" class="flex-1 relative flex overflow-hidden bg-indigo-950">
+
+      <!-- 左サイドパネル: 参加QR ＆ 通信モニター -->
+      <aside class="w-72 pop-panel m-2.5 z-20 flex flex-col justify-between p-3.5 shrink-0 hidden xl:flex">
+        <div class="space-y-3">
+          <!-- QR & ルームコード -->
+          <div class="bg-indigo-950/90 border-2 border-pink-400/50 rounded-2xl p-3 text-center shadow-inner">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[11px] font-black text-pink-300 tracking-wider">📱 スマホで飛び入り参加！</span>
+              <span class="text-[10px] bg-pink-500 text-white px-2 py-0.5 rounded-full font-black animate-pulse">最大20人</span>
+            </div>
+            <div id="qrcode-box" class="bg-white p-2 rounded-xl inline-block my-1 shadow-md"></div>
+            <div class="mt-1 bg-black/60 rounded-xl py-1.5 px-2 border border-white/15">
+              <div class="text-[10px] text-indigo-200 font-bold">ROOMナンバー</div>
+              <div id="room-code-text" class="font-arcade text-2xl font-black text-yellow-300 tracking-widest drop-shadow">----</div>
+            </div>
+          </div>
+
+          <!-- 3Dモデルステータス -->
+          <div class="bg-indigo-900/60 border border-indigo-400/30 rounded-xl p-2.5 text-xs">
+            <div class="flex items-center justify-between font-black text-amber-300 mb-1">
+              <span>🎨 キャラクターモデル</span>
+              <span id="model-status-badge" class="text-[10px] bg-amber-400/20 border border-amber-400/40 px-1.5 py-0.5 rounded text-amber-200">標準ぷにキャラ</span>
+            </div>
+            <p class="text-[11px] text-indigo-200 leading-tight">
+              同じフォルダに <code class="bg-black/50 px-1 rounded text-pink-300">character.glb</code> を置くか上のボタンから読み込むとBlenderモデルに全員変身します！
+            </p>
+          </div>
+
+          <!-- 通信パケットモニター -->
+          <div class="bg-black/50 border border-indigo-500/30 rounded-xl p-2.5">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[11px] font-black text-cyan-300">📡 リアルタイム通信モニター</span>
+              <span id="pps-label" class="font-arcade text-[11px] text-emerald-400">0 pkt/s</span>
+            </div>
+            <canvas id="net-canvas" width="230" height="80" class="w-full bg-indigo-950/90 rounded-lg border border-indigo-800"></canvas>
+            <div id="packet-log" class="mt-1.5 h-16 overflow-hidden text-[10px] font-mono text-cyan-200/80 space-y-0.5 leading-tight">
+              <div>[SYS] Wacha-Wacha 3D Engine Ready!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 下部コントロール -->
+        <div class="space-y-1.5 pt-2 border-t border-white/15">
+          <div class="grid grid-cols-2 gap-1.5">
+            <button onclick="spawnBot()" class="arcade-btn bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-black py-2 rounded-xl text-xs">
+              🤖 CPUキャラ追加
+            </button>
+            <button onclick="triggerArenaEvent()" class="arcade-btn bg-pink-500 hover:bg-pink-400 text-white font-black py-2 rounded-xl text-xs">
+              ⚡ ギミック発動！
+            </button>
+          </div>
+          <button onclick="resetMatch()" class="arcade-btn w-full bg-indigo-800 hover:bg-indigo-700 text-indigo-200 font-bold py-1.5 rounded-xl text-xs">
+            🔄 スコア＆王冠リセット
+          </button>
+        </div>
+      </aside>
+
+      <!-- 3Dゲームキャンバス領域 -->
+      <main class="flex-1 relative overflow-hidden" id="three-container">
+        <div id="floating-layer" class="absolute inset-0 pointer-events-none overflow-hidden z-30"></div>
+        <div id="danmaku-layer" class="absolute inset-0 pointer-events-none overflow-hidden z-40"></div>
+
+        <!-- 上部センター：ギミック＆王冠アナウンス -->
+        <div class="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center pointer-events-none w-full max-w-xl px-4">
+          <div class="pop-panel px-6 py-2 flex items-center gap-5 border-2 border-yellow-400/60">
+            <div class="text-center">
+              <div class="text-[10px] text-pink-300 font-black">ギミック発動まで</div>
+              <div id="event-timer" class="font-arcade text-2xl font-black text-yellow-300">00:20</div>
+            </div>
+            <div class="h-8 w-0.5 bg-white/20"></div>
+            <div class="text-left">
+              <div class="text-[10px] text-cyan-300 font-black">現在のステージ状況</div>
+              <div id="stage-status" class="text-sm md:text-base font-black text-white">👑 中央の「王冠」を奪い合え！</div>
+            </div>
+          </div>
+
+          <!-- ド派手なイベントバナー -->
+          <div id="big-alert" class="hidden mt-3 bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 text-white font-black px-7 py-2.5 rounded-2xl shadow-[0_6px_0_#000] border-4 border-white text-lg md:text-xl tracking-wider animate-bounce">
+            ⚠️ 回転ハンマーバー出現！！ジャンプでかわすんだ！
+          </div>
+        </div>
+
+        <!-- 画面右上：わちゃわちゃランキング -->
+        <div class="absolute top-3 right-3 w-60 pop-panel p-3 z-30 pointer-events-none">
+          <div class="flex items-center justify-between border-b-2 border-white/15 pb-1.5 mb-2">
+            <span class="text-xs font-black text-yellow-300">🏆 わちゃわちゃランキング</span>
+            <span id="player-count" class="text-[11px] bg-pink-500 text-white px-2 py-0.5 rounded-full font-black">0人</span>
+          </div>
+          <div id="leaderboard" class="space-y-1.5 text-xs max-h-60 overflow-y-auto"></div>
+        </div>
+
+        <!-- 画面下部：操作ガイド -->
+        <div class="absolute bottom-3 left-3 right-3 flex justify-between items-end pointer-events-none z-20">
+          <div class="pop-panel px-4 py-2 text-xs text-indigo-100 hidden sm:block">
+            <span class="text-yellow-300 font-black">🎮 遊び方：</span>
+            手足をバタバタさせて押し合い！ <span class="text-cyan-300 font-black">【B: 飛び込みダイブ】</span>で集団を弾き飛ばし、<span class="text-pink-400 font-black">【A: 回転アタック】</span>で場外へ落とそう！👑王冠を持つと巨大化！
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- ================= スマホコントローラー画面 (CLIENT) ================= -->
+    <div id="controller-section" class="w-full lg:w-[410px] bg-indigo-950 border-t-4 lg:border-t-0 lg:border-l-4 border-pink-500/60 flex flex-col justify-between p-3.5 z-30 shrink-0 select-none">
+
+      <!-- 上部：プレイヤー名 ＆ 4桁ルーム同期 -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between bg-indigo-900/90 p-2.5 rounded-2xl border-2 border-white/20 shadow-md">
+          <div class="flex items-center gap-2.5">
+            <div id="ctrl-color-icon" class="w-9 h-9 rounded-2xl bg-pink-500 border-2 border-white shadow-md flex items-center justify-center font-black text-lg">😆</div>
+            <div>
+              <input id="ctrl-name-input" type="text" maxlength="8" value="P1_タロウ" onchange="sendProfileUpdate()"
+                class="bg-transparent font-black text-base text-white focus:outline-none border-b-2 border-dashed border-pink-300 w-28" />
+              <div id="ctrl-sync-text" class="text-[10px] text-emerald-300 font-bold">🟢 同期バッチリ！</div>
+            </div>
+          </div>
+          <div class="text-right bg-black/40 px-3 py-1 rounded-xl border border-yellow-400/40">
+            <div class="text-[10px] text-yellow-200 font-bold">SCORE</div>
+            <div id="ctrl-score-num" class="font-arcade text-2xl font-black text-yellow-300">0</div>
+          </div>
+        </div>
+
+        <!-- ルーム番号入力バー -->
+        <div class="flex items-center gap-1.5 bg-black/40 px-3 py-1.5 rounded-xl border border-white/15 text-xs">
+          <span class="text-indigo-200 font-bold shrink-0">ROOM番号:</span>
+          <input id="manual-room-input" type="text" maxlength="6" placeholder="4桁コード"
+            class="bg-indigo-950 text-yellow-300 font-arcade font-bold px-2 py-1 rounded-lg border border-indigo-600 w-24 text-center uppercase" />
+          <button onclick="connectToManualRoom()" class="arcade-btn bg-pink-500 hover:bg-pink-400 text-white font-black px-3 py-1 rounded-lg text-xs ml-auto">
+            接続する
+          </button>
+        </div>
+      </div>
+
+      <!-- 中央：3D風ぷにぷにスティック ＆ 3大アクションボタン -->
+      <div class="flex-1 flex items-center justify-around py-2 gap-2 relative">
+        <!-- 左：バーチャルアナログスティック -->
+        <div class="flex flex-col items-center">
+          <div id="joy-zone" class="w-40 h-40 rounded-full bg-indigo-900/90 border-4 border-pink-400/50 relative flex items-center justify-center shadow-[inset_0_6px_15px_rgba(0,0,0,0.6)] touch-none">
+            <div class="absolute inset-4 rounded-full border-2 border-dashed border-white/20 pointer-events-none"></div>
+            <div id="joy-knob" class="w-16 h-16 rounded-full bg-gradient-to-b from-yellow-300 to-amber-500 border-4 border-white shadow-[0_6px_0_#b45309] pointer-events-none flex items-center justify-center font-black text-slate-900 text-xs">
+              MOVE
+            </div>
+          </div>
+          <span class="text-[11px] text-indigo-200 mt-1.5 font-black">🕹️ ぐりぐり移動 (WASD/矢印)</span>
+        </div>
+
+        <!-- 右：ゲーセン風でかボタン3つ -->
+        <div class="flex flex-col gap-2.5 items-center">
+          <!-- Yボタン：ジャンプ -->
+          <button id="btn-jump"
+            class="arcade-btn w-24 h-12 rounded-2xl bg-gradient-to-b from-emerald-400 to-emerald-600 border-2 border-white flex items-center justify-center gap-1 shadow-lg">
+            <span class="font-arcade font-black text-base text-slate-950">Y</span>
+            <span class="text-xs font-black text-slate-950">ジャンプ</span>
+          </button>
+
+          <div class="flex gap-2.5">
+            <!-- Bボタン：飛び込みダイブ -->
+            <button id="btn-dive"
+              class="arcade-btn w-20 h-20 rounded-full bg-gradient-to-b from-cyan-300 to-blue-600 border-4 border-white flex flex-col items-center justify-center shadow-lg">
+              <span class="font-arcade font-black text-xl text-white leading-none">B</span>
+              <span class="text-[10px] font-black text-white mt-0.5">飛び込み!</span>
+            </button>
+
+            <!-- Aボタン：回転ぶっとばし -->
+            <button id="btn-spin"
+              class="arcade-btn w-24 h-24 rounded-full bg-gradient-to-b from-pink-400 to-rose-600 border-4 border-white flex flex-col items-center justify-center shadow-lg">
+              <span class="font-arcade font-black text-2xl text-white leading-none">A</span>
+              <span class="text-[11px] font-black text-yellow-200 mt-0.5">回転アタック</span>
+              <span id="spin-cd-text" class="text-[9px] text-white/90 font-bold">READY!</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 下部：スタンプ弾幕（頭上に吹き出しも出る！） -->
+      <div class="space-y-1.5 bg-indigo-900/70 p-2.5 rounded-2xl border border-white/15">
+        <div class="text-[11px] font-black text-yellow-300">💬 わちゃわちゃリアクション（大画面＆キャラ頭上に表示）</div>
+        <div class="grid grid-cols-4 gap-1.5">
+          <button onclick="sendReaction('🔥 どけーっ！')" class="arcade-btn bg-indigo-800 hover:bg-indigo-700 py-1.5 rounded-xl text-xs font-black">🔥どけー!</button>
+          <button onclick="sendReaction('👑 王冠よこせ！')" class="arcade-btn bg-indigo-800 hover:bg-indigo-700 py-1.5 rounded-xl text-xs font-black">👑よこせ!</button>
+          <button onclick="sendReaction('😱 落ちるぅぅ！')" class="arcade-btn bg-indigo-800 hover:bg-indigo-700 py-1.5 rounded-xl text-xs font-black">😱落ちる!</button>
+          <button onclick="sendReaction('🤣 わちゃわちゃｗ')" class="arcade-btn bg-indigo-800 hover:bg-indigo-700 py-1.5 rounded-xl text-xs font-black">🤣わちゃｗ</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // ============================================================================
+    // 1. ポップで楽しいアーケード効果音シンセサイザー (Web Audio API)
+    // ============================================================================
+    let audioCtx = null;
+    let soundEnabled = true;
+
+    function initAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function toggleAudio() {
+      soundEnabled = !soundEnabled;
+      initAudio();
+      const btn = document.getElementById('btn-audio');
+      btn.textContent = soundEnabled ? '🔊 効果音ON' : '🔇 ミュート';
+      btn.className = soundEnabled
+        ? 'arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-black'
+        : 'arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-slate-700 text-slate-300 font-bold';
+    }
+
+    function playSound(type) {
+      if (!soundEnabled) return;
+      try {
+        initAudio();
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'boing') {
+          // ぷにっとぶつかる音
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.exponentialRampToValueAtTime(520, now + 0.08);
+          osc.frequency.exponentialRampToValueAtTime(180, now + 0.18);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.18);
+          osc.start(now); osc.stop(now + 0.18);
+        } else if (type === 'jump') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(260, now);
+          osc.frequency.exponentialRampToValueAtTime(680, now + 0.16);
+          gain.gain.setValueAtTime(0.18, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.16);
+          osc.start(now); osc.stop(now + 0.16);
+        } else if (type === 'dive') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(500, now);
+          osc.frequency.exponentialRampToValueAtTime(150, now + 0.22);
+          gain.gain.setValueAtTime(0.18, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.22);
+          osc.start(now); osc.stop(now + 0.22);
+        } else if (type === 'spin') {
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(300, now);
+          osc.frequency.exponentialRampToValueAtTime(900, now + 0.25);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+          osc.start(now); osc.stop(now + 0.25);
+        } else if (type === 'ko') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(440, now);
+          osc.frequency.setValueAtTime(587, now + 0.08);
+          osc.frequency.setValueAtTime(880, now + 0.16);
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.45);
+          osc.start(now); osc.stop(now + 0.45);
+        } else if (type === 'crown') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(523, now);
+          osc.frequency.setValueAtTime(659, now + 0.07);
+          osc.frequency.setValueAtTime(784, now + 0.14);
+          osc.frequency.setValueAtTime(1046, now + 0.21);
+          gain.gain.setValueAtTime(0.22, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+          osc.start(now); osc.stop(now + 0.4);
         }
+      } catch (e) {}
+    }
 
-        function toggleAudio() {
-            soundEnabled = !soundEnabled;
-            const icon = document.getElementById('iconAudio');
-            icon.className = soundEnabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark';
-            if (soundEnabled) playSound('coin');
+    // ============================================================================
+    // 2. ハイブリッド通信 (MQTT over WSS + PeerJS)
+    // ============================================================================
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomParam = urlParams.get('room');
+    let currentMode = roomParam ? 'controller' : 'split';
+    let roomCode = (roomParam || Math.random().toString(36).substring(2, 6)).toUpperCase();
+    let myClientId = 'p_' + Math.random().toString(36).substring(2, 9);
+
+    let mqttClient = null;
+    let mqttTopicHost = '';
+    let mqttTopicState = '';
+    let packetsCount = 0;
+    let ppsValue = 0;
+    let packetVisuals = [];
+
+    const POP_COLORS = ['#ff477e', '#00f5d4', '#fee440', '#9b5de5', '#f15bb5', '#00bbf9', '#ff9f1c', '#38b000'];
+    const POP_FACES = ['😆', '😎', '🤩', '😈', '🥳', '🤖', '🐱', '🦊'];
+
+    // ============================================================================
+    // 3. Three.js フル3D「わちゃわちゃステージ」＆ Blender (.glb) ローダー
+    // ============================================================================
+    let scene, camera, renderer, gltfLoader;
+    let stageRadius = 25;
+    let platformGroup, sweeperBarGroup, crownMesh;
+    let customBlenderModelTemplate = null; // 読み込まれた .glb の原本
+
+    const players = {};
+    const candies = [];
+    let crownState = { holderId: null, x: 0, z: 0, angle: 0 };
+    let sweeperState = { active: false, angle: 0, speed: 0.032 };
+    let eventCountdown = 20;
+
+    function initThreeStage() {
+      const container = document.getElementById('three-container');
+      const w = container.clientWidth || 800;
+      const h = container.clientHeight || 600;
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x1a103c);
+      scene.fog = new THREE.FogExp2(0x1a103c, 0.008);
+
+      camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 300);
+      camera.position.set(0, 32, 40);
+      camera.lookAt(0, 0, 2);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(w, h);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      container.appendChild(renderer.domElement);
+
+      // 明るいポップなライティング
+      const hemiLight = new THREE.HemisphereLight(0xffffff, 0x4c1d95, 0.95);
+      scene.add(hemiLight);
+
+      const dirLight = new THREE.DirectionalLight(0xfffbeb, 0.9);
+      dirLight.position.set(25, 45, 25);
+      dirLight.castShadow = true;
+      scene.add(dirLight);
+
+      // カラフルなドーナツ型・円形ステージを作成
+      platformGroup = new THREE.Group();
+      scene.add(platformGroup);
+      buildPopArenaStage();
+
+      // ステージ中央の「黄金の王冠👑」
+      crownMesh = createCrownMesh();
+      scene.add(crownMesh);
+
+      // ゲーセン風「回転ハンマーバー（スイーパー）」
+      sweeperBarGroup = createSweeperBar();
+      sweeperBarGroup.visible = false;
+      scene.add(sweeperBarGroup);
+
+      // キャンディ（得点アイテム）を配置
+      for (let i = 0; i < 14; i++) {
+        spawnCandy();
+      }
+
+      // Blender (.glb) ローダー初期化 & 自動で character.glb を探す
+      if (THREE.GLTFLoader) {
+        gltfLoader = new THREE.GLTFLoader();
+        tryAutoLoadCharacterGLB();
+      }
+
+      window.addEventListener('resize', () => {
+        if (!container.clientWidth || !container.clientHeight) return;
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+      });
+    }
+
+    // ポップなカラフル円形ステージ
+    function buildPopArenaStage() {
+      while (platformGroup.children.length) platformGroup.remove(platformGroup.children[0]);
+
+      // メインの床
+      const cylGeo = new THREE.CylinderGeometry(stageRadius, stageRadius * 0.92, 3, 48);
+      const cylMat = new THREE.MeshStandardMaterial({ color: 0x3b0764, roughness: 0.4, metalness: 0.1 });
+      const floor = new THREE.Mesh(cylGeo, cylMat);
+      floor.position.y = -1.5;
+      floor.receiveShadow = true;
+      platformGroup.add(floor);
+
+      // カラフルなリング模様（Fall Guys風）
+      const ringColors = [0xf43f5e, 0xfacc15, 0x06b6d4, 0xa855f7];
+      ringColors.forEach((col, idx) => {
+        const rInner = idx * 6;
+        const rOuter = rInner + 5.5;
+        if (rOuter <= stageRadius) {
+          const ringGeo = new THREE.RingGeometry(rInner, rOuter, 48);
+          ringGeo.rotateX(-Math.PI / 2);
+          const ringMat = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.28, side: THREE.DoubleSide });
+          const ring = new THREE.Mesh(ringGeo, ringMat);
+          ring.position.y = 0.03 + idx * 0.01;
+          platformGroup.add(ring);
         }
+      });
 
-        function playSound(type) {
-            if (!soundEnabled) return;
-            initAudio();
-            if (!audioCtx) return;
+      // 外周のバンパーエッジ（黄色とピンクのネオン枠）
+      const edgeGeo = new THREE.TorusGeometry(stageRadius, 0.45, 16, 64);
+      edgeGeo.rotateX(Math.PI / 2);
+      const edgeMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+      const edge = new THREE.Mesh(edgeGeo, edgeMat);
+      platformGroup.add(edge);
 
-            const now = audioCtx.currentTime;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
+      // ステージ周囲に浮かぶ風船・ブロック装飾
+      for (let i = 0; i < 12; i++) {
+        const ang = (i / 12) * Math.PI * 2;
+        const decoGeo = new THREE.OctahedronGeometry(1.5, 0);
+        const decoMat = new THREE.MeshStandardMaterial({ color: ringColors[i % 4], roughness: 0.2 });
+        const deco = new THREE.Mesh(decoGeo, decoMat);
+        deco.position.set(Math.cos(ang) * (stageRadius + 8), Math.sin(i * 2) * 3 - 2, Math.sin(ang) * (stageRadius + 8));
+        platformGroup.add(deco);
+      }
+    }
 
-            if (type === 'coin') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(660, now);
-                osc.frequency.exponentialRampToValueAtTime(1320, now + 0.12);
-                gain.gain.setValueAtTime(0.12, now);
-                gain.gain.linearRampToValueAtTime(0.01, now + 0.13);
-                osc.start(now); osc.stop(now + 0.13);
-            } else if (type === 'dash') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(150, now);
-                osc.frequency.exponentialRampToValueAtTime(520, now + 0.18);
-                gain.gain.setValueAtTime(0.15, now);
-                gain.gain.linearRampToValueAtTime(0.01, now + 0.18);
-                osc.start(now); osc.stop(now + 0.18);
-            } else if (type === 'pulse') {
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(420, now);
-                osc.frequency.exponentialRampToValueAtTime(75, now + 0.3);
-                gain.gain.setValueAtTime(0.18, now);
-                gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
-                osc.start(now); osc.stop(now + 0.3);
-            } else if (type === 'jump') {
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(240, now);
-                osc.frequency.exponentialRampToValueAtTime(680, now + 0.16);
-                gain.gain.setValueAtTime(0.15, now);
-                gain.gain.linearRampToValueAtTime(0.01, now + 0.16);
-                osc.start(now); osc.stop(now + 0.16);
-            } else if (type === 'ko') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(300, now);
-                osc.frequency.linearRampToValueAtTime(90, now + 0.45);
-                gain.gain.setValueAtTime(0.25, now);
-                gain.gain.linearRampToValueAtTime(0.01, now + 0.45);
-                osc.start(now); osc.stop(now + 0.45);
-            } else if (type === 'join') {
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(440, now);
-                osc.frequency.setValueAtTime(660, now + 0.08);
-                osc.frequency.setValueAtTime(880, now + 0.16);
-                gain.gain.setValueAtTime(0.18, now);
-                gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
-                osc.start(now); osc.stop(now + 0.3);
-            }
+    // 👑 黄金の王冠メッシュ
+    function createCrownMesh() {
+      const group = new THREE.Group();
+      const baseGeo = new THREE.CylinderGeometry(1.1, 0.85, 0.9, 8);
+      const goldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xd97706, emissiveIntensity: 0.4, metalness: 0.6, roughness: 0.2 });
+      const base = new THREE.Mesh(baseGeo, goldMat);
+      group.add(base);
+
+      // ルビーの飾り
+      const gemGeo = new THREE.SphereGeometry(0.32, 8, 8);
+      const gemMat = new THREE.MeshBasicMaterial({ color: 0xf43f5e });
+      const gem = new THREE.Mesh(gemGeo, gemMat);
+      gem.position.y = 0.55;
+      group.add(gem);
+
+      group.position.set(0, 1.2, 0);
+      return group;
+    }
+
+    // 回転ハンマーバー（スイーパー）
+    function createSweeperBar() {
+      const group = new THREE.Group();
+      // 中央の柱
+      const postGeo = new THREE.CylinderGeometry(1.6, 1.8, 3.2, 16);
+      const postMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.3 });
+      const post = new THREE.Mesh(postGeo, postMat);
+      post.position.y = 1.6;
+      group.add(post);
+
+      // 横に伸びる紅白の回転バー
+      const barGeo = new THREE.CylinderGeometry(0.65, 0.65, stageRadius * 1.85, 16);
+      barGeo.rotateZ(Math.PI / 2);
+      const barMat = new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0xbe123c, emissiveIntensity: 0.3 });
+      const bar = new THREE.Mesh(barGeo, barMat);
+      bar.position.y = 1.1;
+      group.add(bar);
+
+      return group;
+    }
+
+    // ============================================================================
+    // 4. ちっちゃい二頭身キャラクター生成 ＆ Blender (.glb) 切り替え機能
+    // ============================================================================
+    function createChibiCharacterMesh(colorHex) {
+      const root = new THREE.Group();
+
+      // もしBlenderモデル（.glb）が読み込まれていればそれを複製して使う！
+      if (customBlenderModelTemplate) {
+        const cloned = customBlenderModelTemplate.clone();
+        // プレイヤーカラーをほんのり反映できるパーツがあれば色付け
+        const colorRingGeo = new THREE.RingGeometry(1.1, 1.45, 24);
+        colorRingGeo.rotateX(-Math.PI / 2);
+        const colorRingMat = new THREE.MeshBasicMaterial({ color: colorHex, side: THREE.DoubleSide });
+        const ring = new THREE.Mesh(colorRingGeo, colorRingMat);
+        ring.position.y = 0.05;
+        root.add(ring);
+        root.add(cloned);
+        root.userData = { isCustomGLB: true, bodyGroup: cloned };
+        return root;
+      }
+
+      // --- 標準の「ぷにぷに二頭身ちびキャラ」 ---
+      const bodyGroup = new THREE.Group();
+      root.add(bodyGroup);
+
+      const mainMat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.35, metalness: 0.05 });
+      const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
+      const darkMat = new THREE.MeshBasicMaterial({ color: 0x111827 });
+
+      // ぽっちゃり胴体
+      const torsoGeo = new THREE.SphereGeometry(0.95, 18, 16);
+      torsoGeo.scale(1, 1.1, 0.9);
+      const torso = new THREE.Mesh(torsoGeo, mainMat);
+      torso.position.y = 1.1;
+      torso.castShadow = true;
+      bodyGroup.add(torso);
+
+      // 大きな頭（二頭身）
+      const headGeo = new THREE.SphereGeometry(0.85, 18, 16);
+      const head = new THREE.Mesh(headGeo, mainMat);
+      head.position.y = 2.35;
+      head.castShadow = true;
+      bodyGroup.add(head);
+
+      // 顔の白いバイザー（Fall Guys風のかわいい顔窓）
+      const faceGeo = new THREE.SphereGeometry(0.62, 16, 12);
+      faceGeo.scale(1.05, 0.75, 0.5);
+      const face = new THREE.Mesh(faceGeo, whiteMat);
+      face.position.set(0, 2.38, 0.52);
+      bodyGroup.add(face);
+
+      // くりくりな目（左右）
+      const eyeGeo = new THREE.SphereGeometry(0.13, 8, 8);
+      eyeGeo.scale(1, 1.4, 0.6);
+      const eyeL = new THREE.Mesh(eyeGeo, darkMat);
+      eyeL.position.set(-0.22, 2.42, 0.75);
+      const eyeR = new THREE.Mesh(eyeGeo, darkMat);
+      eyeR.position.set(0.22, 2.42, 0.75);
+      bodyGroup.add(eyeL, eyeR);
+
+      // パタパタ動く手（左右）
+      const armGeo = new THREE.SphereGeometry(0.32, 10, 10);
+      armGeo.scale(0.8, 1.6, 0.8);
+      const armL = new THREE.Mesh(armGeo, mainMat);
+      armL.position.set(-1.05, 1.35, 0);
+      const armR = new THREE.Mesh(armGeo, mainMat);
+      armR.position.set(1.05, 1.35, 0);
+      bodyGroup.add(armL, armR);
+
+      // トコトコ動く足（左右）
+      const legGeo = new THREE.SphereGeometry(0.35, 10, 10);
+      legGeo.scale(0.9, 1.3, 1.2);
+      const legL = new THREE.Mesh(legGeo, whiteMat);
+      legL.position.set(-0.42, 0.35, 0);
+      const legR = new THREE.Mesh(legGeo, whiteMat);
+      legR.position.set(0.42, 0.35, 0);
+      bodyGroup.add(legL, legR);
+
+      // 足元のプレイヤーカラーリング
+      const ringGeo = new THREE.RingGeometry(1.1, 1.35, 24);
+      ringGeo.rotateX(-Math.PI / 2);
+      const ringMat = new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.75, side: THREE.DoubleSide });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.position.y = 0.05;
+      root.add(ring);
+
+      root.userData = { isCustomGLB: false, bodyGroup, armL, armR, legL, legR, head };
+      return root;
+    }
+
+    // 同じフォルダに character.glb があれば自動で読み込む
+    function tryAutoLoadCharacterGLB() {
+      gltfLoader.load(
+        './character.glb',
+        (gltf) => {
+          applyLoadedGLBModel(gltf.scene, 'character.glb');
+        },
+        undefined,
+        () => {
+          // character.glb がまだ置かれていない場合は標準ぷにキャラのまま動くのでエラー無視
         }
+      );
+    }
 
-        /******************************************************************
-         * 2. ROOM ID & HYBRID NETWORK TRANSPORT (MQTT over WSS + WebRTC)
-         *    Solves 100% of smartphone 4G/5G NAT & campus Wi-Fi blocks!
-         ******************************************************************/
-        function getUrlRoomParam() {
-            const searchParams = new URLSearchParams(window.location.search);
-            if (searchParams.get('room')) return searchParams.get('room').trim().toUpperCase();
-            if (window.location.hash.includes('room=')) {
-                return window.location.hash.split('room=')[1].split('&')[0].trim().toUpperCase();
-            }
-            return null;
+    // 画面上のボタンからローカルの .glb ファイルを読み込んで即座に全員変身させる
+    function handleLocalGLBUpload(event) {
+      const file = event.target.files[0];
+      if (!file || !gltfLoader) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        gltfLoader.parse(e.target.result, '', (gltf) => {
+          applyLoadedGLBModel(gltf.scene, file.name);
+        });
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function applyLoadedGLBModel(gltfScene, fileName) {
+      // サイズを自動調整して約3ユニットの高さに揃える
+      const box = new THREE.Box3().setFromObject(gltfScene);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      const maxDim = Math.max(size.x, size.y, size.z) || 1;
+      const scale = 2.8 / maxDim;
+      gltfScene.scale.set(scale, scale, scale);
+
+      // 底面をY=0に合わせる
+      const box2 = new THREE.Box3().setFromObject(gltfScene);
+      gltfScene.position.y = -box2.min.y;
+
+      customBlenderModelTemplate = gltfScene;
+
+      // すでに参戦している全員の3Dメッシュを新しいBlenderモデルに差し替える
+      Object.values(players).forEach(p => {
+        scene.remove(p.mesh);
+        p.mesh = createChibiCharacterMesh(p.color);
+        scene.add(p.mesh);
+      });
+
+      const badge = document.getElementById('model-status-badge');
+      if (badge) {
+        badge.textContent = '✨ ' + fileName;
+        badge.className = 'text-[10px] bg-emerald-500 text-slate-950 font-black px-2 py-0.5 rounded';
+      }
+      spawnDanmaku(`🎉 Blenderモデル「${fileName}」を全員に適用しました！`, '#facc15');
+      playSound('crown');
+    }
+
+    // キャンディ（得点アイテム）生成
+    function spawnCandy() {
+      const colors = [0xff477e, 0x00f5d4, 0xfee440, 0xa855f7];
+      const col = colors[Math.floor(Math.random() * colors.length)];
+      const geo = new THREE.OctahedronGeometry(0.65, 1);
+      const mat = new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.35, roughness: 0.2 });
+      const mesh = new THREE.Mesh(geo, mat);
+
+      const ang = Math.random() * Math.PI * 2;
+      const rad = 4 + Math.random() * (stageRadius - 6);
+      mesh.position.set(Math.cos(ang) * rad, 0.8, Math.sin(ang) * rad);
+      scene.add(mesh);
+      candies.push({ mesh, phase: Math.random() * 6 });
+    }
+
+    // ============================================================================
+    // 5. プレイヤー管理 ＆ わちゃわちゃ物理アクション
+    // ============================================================================
+    function ensurePlayer(id, name, isBot = false) {
+      if (players[id]) {
+        if (name) players[id].name = name;
+        return players[id];
+      }
+      const idx = Object.keys(players).length;
+      const color = POP_COLORS[idx % POP_COLORS.length];
+      const face = POP_FACES[idx % POP_FACES.length];
+      const mesh = createChibiCharacterMesh(color);
+
+      const ang = Math.random() * Math.PI * 2;
+      const rad = 3 + Math.random() * 7;
+      const sx = Math.cos(ang) * rad;
+      const sz = Math.sin(ang) * rad;
+      mesh.position.set(sx, 8, sz);
+      scene.add(mesh);
+
+      players[id] = {
+        id,
+        name: name || `P${idx + 1}`,
+        face,
+        color,
+        isBot,
+        mesh,
+        x: sx, y: 8, z: sz,
+        vx: 0, vy: 0, vz: 0,
+        joyX: 0, joyY: 0,
+        angle: 0,
+        walkCycle: 0,
+        score: 0,
+        spinCd: 0,
+        diveTimer: 0,
+        spinAnimTimer: 0,
+        botDecisionTimer: 0,
+        lastHitBy: null
+      };
+      updateRankingUI();
+      return players[id];
+    }
+
+    function spawnBot() {
+      const botNames = ['ぷにロボ', 'モチまる', 'コロ助', 'ピコ太郎', 'ネジくん', 'タマちゃん'];
+      const id = 'bot_' + Math.random().toString(36).substring(2, 6);
+      const name = '🤖' + botNames[Math.floor(Math.random() * botNames.length)];
+      ensurePlayer(id, name, true);
+      playSound('jump');
+    }
+
+    // Yボタン：ジャンプ
+    function doJump(p) {
+      if (p.y <= 0.15) {
+        p.vy = 0.62;
+        playSound('jump');
+      }
+    }
+
+    // Bボタン：前方へ飛び込みヘッドスライディング（ダイブ）
+    function doDive(p) {
+      if (p.diveTimer > 0) return;
+      const dirX = Math.abs(p.joyX) + Math.abs(p.joyY) > 0.1 ? p.joyX : Math.sin(p.angle);
+      const dirZ = Math.abs(p.joyX) + Math.abs(p.joyY) > 0.1 ? p.joyY : Math.cos(p.angle);
+      const len = Math.hypot(dirX, dirZ) || 1;
+      p.vx += (dirX / len) * 1.15;
+      p.vz += (dirZ / len) * 1.15;
+      if (p.y <= 0.2) p.vy = 0.32;
+      p.diveTimer = 22;
+      playSound('dive');
+    }
+
+    // Aボタン：ジャイアント・スピン衝撃波
+    function doSpinAttack(p) {
+      if (p.spinCd > 0) return;
+      p.spinCd = 130; // 約2.2秒クールダウン
+      p.spinAnimTimer = 25;
+      playSound('spin');
+
+      // 3D 충격波リングエフェクト
+      const ringGeo = new THREE.RingGeometry(0.8, 1.5, 32);
+      ringGeo.rotateX(-Math.PI / 2);
+      const ringMat = new THREE.MeshBasicMaterial({ color: p.color, transparent: true, opacity: 0.9, side: THREE.DoubleSide });
+      const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+      ringMesh.position.set(p.x, p.y + 0.6, p.z);
+      scene.add(ringMesh);
+
+      let f = 0;
+      const anim = setInterval(() => {
+        f++;
+        ringMesh.scale.setScalar(1 + f * 0.65);
+        ringMat.opacity = 1 - f / 14;
+        if (f >= 14) {
+          clearInterval(anim);
+          scene.remove(ringMesh);
         }
+      }, 16);
 
-        const initialRoomParam = getUrlRoomParam();
-        let activeRoomId = initialRoomParam || sessionStorage.getItem('ccc_arena_room');
-        if (!activeRoomId) {
-            // Generate clean 4-digit alphanumeric code (easy to type or scan)
-            const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
-            activeRoomId = '';
-            for (let i = 0; i < 4; i++) activeRoomId += chars[Math.floor(Math.random() * chars.length)];
-            sessionStorage.setItem('ccc_arena_room', activeRoomId);
+      // 周囲のキャラを弾き飛ばす
+      const powerMult = crownState.holderId === p.id ? 1.45 : 1.0;
+      Object.values(players).forEach(other => {
+        if (other.id === p.id) return;
+        const dx = other.x - p.x;
+        const dz = other.z - p.z;
+        const dist = Math.hypot(dx, dz);
+        if (dist < 8.5 && dist > 0.01) {
+          const force = ((8.5 - dist) / 8.5) * 1.45 * powerMult;
+          other.vx += (dx / dist) * force;
+          other.vz += (dz / dist) * force;
+          other.vy = 0.42;
+          other.lastHitBy = p.id;
+          showFloatingText(other.x, other.y + 2, other.z, '💥 SPIN HIT!', '#facc15');
         }
-
-        // Unique Client ID for this smartphone/tab
-        const myClientId = 'p-' + Math.random().toString(36).substring(2, 8);
-        const LOCAL_PLAYER_ID = 'local-player';
-
-        let mqttClient = null;
-        let mqttConnected = false;
-        let hostPeer = null;
-        let clientPeer = null;
-        let webrtcConns = new Map();
-        let packetCounterThisSec = 0;
-
-        // Controller State
-        let controllerProfile = {
-            id: initialRoomParam ? myClientId : LOCAL_PLAYER_ID,
-            name: initialRoomParam ? 'Phone_' + Math.floor(10 + Math.random() * 89) : 'You (P1)',
-            color: '#00f3ff',
-            x: 0,
-            y: 0
-        };
-
-        function getTopicPrefix(roomCode) {
-            return `ccc-festival-3d-arena-v2/${roomCode.toUpperCase()}`;
-        }
-
-        function initHybridNetwork() {
-            document.getElementById('displayRoomId').textContent = activeRoomId;
-            document.getElementById('inputRemoteRoomId').value = activeRoomId;
-            generateJoinQrCode(activeRoomId);
-
-            // 1. Connect MQTT over WSS (Works across ALL 4G/5G & Campus Firewalls)
-            const brokers = [
-                'wss://broker.emqx.io:8084/mqtt',
-                'wss://test.mosquitto.org:8081/mqtt'
-            ];
-            let brokerIdx = 0;
-
-            function connectMqttBroker() {
-                const url = brokers[brokerIdx % brokers.length];
-                try {
-                    mqttClient = mqtt.connect(url, {
-                        clientId: 'ccc3d_' + Math.random().toString(16).substring(2, 10),
-                        clean: true,
-                        connectTimeout: 4000,
-                        reconnectPeriod: 2000
-                    });
-
-                    mqttClient.on('connect', () => {
-                        mqttConnected = true;
-                        subscribeToRoomTopics(activeRoomId);
-                        updateNetworkBadges(true);
-
-                        // Announce join immediately if controller
-                        sendNetworkPacket({
-                            type: 'JOIN',
-                            id: controllerProfile.id,
-                            name: controllerProfile.name,
-                            color: controllerProfile.color,
-                            ts: Date.now()
-                        });
-                    });
-
-                    mqttClient.on('message', (topic, message) => {
-                        try {
-                            const data = JSON.parse(message.toString());
-                            handleNetworkMessage(data);
-                        } catch (e) {}
-                    });
-
-                    mqttClient.on('error', () => {
-                        brokerIdx++;
-                    });
-                } catch (err) {
-                    console.warn('MQTT Fallback:', err);
-                }
-            }
-            connectMqttBroker();
-
-            // 2. Also initialize WebRTC PeerJS with Google STUN servers
-            try {
-                const peerConfig = {
-                    config: {
-                        iceServers: [
-                            { urls: 'stun:stun.l.google.com:19302' },
-                            { urls: 'stun:stun1.l.google.com:19302' },
-                            { urls: 'stun:stun2.l.google.com:19302' }
-                        ]
-                    }
-                };
-                if (!initialRoomParam) {
-                    hostPeer = new Peer('ccc3d-room-' + activeRoomId.toLowerCase(), peerConfig);
-                    hostPeer.on('connection', (conn) => {
-                        conn.on('data', (data) => handleNetworkMessage(data));
-                    });
-                } else {
-                    clientPeer = new Peer(peerConfig);
-                    clientPeer.on('open', () => {
-                        const conn = clientPeer.connect('ccc3d-room-' + activeRoomId.toLowerCase(), { reliable: false });
-                        conn.on('open', () => {
-                            webrtcConns.set(activeRoomId, conn);
-                        });
-                        conn.on('data', (data) => handleNetworkMessage(data));
-                    });
-                }
-            } catch (e) {}
-        }
-
-        function subscribeToRoomTopics(roomCode) {
-            if (!mqttClient || !mqttConnected) return;
-            const prefix = getTopicPrefix(roomCode);
-            mqttClient.subscribe(`${prefix}/input`);
-            mqttClient.subscribe(`${prefix}/state`);
-        }
-
-        function connectControllerToRoom() {
-            const newRoom = document.getElementById('inputRemoteRoomId').value.trim().toUpperCase();
-            if (!newRoom) return;
-            if (mqttClient && mqttConnected) {
-                mqttClient.unsubscribe(`${getTopicPrefix(activeRoomId)}/input`);
-                mqttClient.unsubscribe(`${getTopicPrefix(activeRoomId)}/state`);
-            }
-            activeRoomId = newRoom;
-            document.getElementById('displayRoomId').textContent = activeRoomId;
-            generateJoinQrCode(activeRoomId);
-            subscribeToRoomTopics(activeRoomId);
-
-            // Switch controller ID to remote player ID if joining another room
-            controllerProfile.id = myClientId;
-            sendNetworkPacket({
-                type: 'JOIN',
-                id: controllerProfile.id,
-                name: controllerProfile.name,
-                color: controllerProfile.color,
-                ts: Date.now()
-            });
-            showToast(`ルーム [${activeRoomId}] に同期しました！`);
-        }
-
-        function sendNetworkPacket(payload) {
-            payload.id = controllerProfile.id;
-            payload.name = controllerProfile.name;
-            payload.color = controllerProfile.color;
-            payload.ts = Date.now();
-
-            // Always apply locally immediately if Host/Split mode
-            if (currentAppMode !== 'controller') {
-                processArenaPacket(payload);
-            }
-
-            // Send via MQTT over WSS (Guaranteed delivery across networks)
-            if (mqttClient && mqttConnected) {
-                const topic = `${getTopicPrefix(activeRoomId)}/input`;
-                mqttClient.publish(topic, JSON.stringify(payload), { qos: 0 });
-            }
-
-            // Also send via WebRTC if open
-            const conn = webrtcConns.get(activeRoomId);
-            if (conn && conn.open) {
-                conn.send(payload);
-            }
-        }
-
-        function handleNetworkMessage(data) {
-            if (!data || !data.type) return;
-
-            // If this is a STATE broadcast from Host to Smartphone Controller
-            if (data.type === 'HOST_SYNC') {
-                if (data.scores && data.scores[controllerProfile.id] !== undefined) {
-                    document.getElementById('ctrlMyScore').textContent = data.scores[controllerProfile.id];
-                }
-                if (data.ts) {
-                    const rtt = Math.max(4, Math.min(199, Date.now() - data.ts));
-                    document.getElementById('ctrlPingDisplay').textContent = rtt;
-                }
-                return;
-            }
-
-            // Avoid double processing local player on the same PC
-            if (data.id === LOCAL_PLAYER_ID && currentAppMode !== 'controller') return;
-
-            processArenaPacket(data);
-        }
-
-        function updateNetworkBadges(online) {
-            const hostBadge = document.getElementById('netStatusBadge');
-            const ctrlBanner = document.getElementById('ctrlSyncBanner');
-            const ctrlText = document.getElementById('ctrlConnText');
-            if (online) {
-                hostBadge.textContent = 'WSS + P2P ONLINE';
-                hostBadge.className = 'text-[9px] font-mono bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/40';
-                ctrlBanner.className = 'bg-emerald-500/20 border border-emerald-400 rounded-lg px-3 py-1.5 flex items-center justify-between';
-                ctrlText.textContent = `同期完了！ (ROOM: ${activeRoomId})`;
-            }
-        }
-
-        function generateJoinQrCode(roomCode) {
-            const qrContainer = document.getElementById('qrcode');
-            if (!qrContainer) return;
-            qrContainer.innerHTML = '';
-            const baseUrl = window.location.href.split('?')[0].split('#')[0];
-            const joinUrl = `${baseUrl}?room=${encodeURIComponent(roomCode)}`;
-            new QRCode(qrContainer, {
-                text: joinUrl,
-                width: 84,
-                height: 84,
-                colorDark: '#040711',
-                colorLight: '#ffffff',
-                correctLevel: QRCode.CorrectLevel.M
-            });
-        }
-
-        function copyJoinUrl() {
-            const baseUrl = window.location.href.split('?')[0].split('#')[0];
-            const joinUrl = `${baseUrl}?room=${encodeURIComponent(activeRoomId)}`;
-            const temp = document.createElement('textarea');
-            temp.value = joinUrl;
-            document.body.appendChild(temp);
-            temp.select();
-            document.execCommand('copy');
-            document.body.removeChild(temp);
-            showToast(`参加用URL (Room: ${activeRoomId}) をコピーしました！`);
-        }
-
-        // Broadcast Host Score & Ping every 600ms to connected phones
-        setInterval(() => {
-            if (currentAppMode !== 'controller' && mqttClient && mqttConnected) {
-                const scoreMap = {};
-                players.forEach((p, id) => { scoreMap[id] = p.score; });
-                mqttClient.publish(`${getTopicPrefix(activeRoomId)}/state`, JSON.stringify({
-                    type: 'HOST_SYNC',
-                    scores: scoreMap,
-                    ts: Date.now()
-                }));
-            }
-            const localP = players.get(controllerProfile.id);
-            if (localP) {
-                document.getElementById('ctrlMyScore').textContent = localP.score;
-            }
-            document.getElementById('statPktRate').textContent = packetCounterThisSec;
-            packetCounterThisSec = 0;
-        }, 1000);
-
-        /******************************************************************
-         * 3. THREE.JS 3D CYBER KNOCKOUT ARENA ENGINE
-         ******************************************************************/
-        let scene, camera, renderer;
-        let arenaRadius = 26;
-        let outerRingCollapsed = false;
-        let outerRingMesh, innerPlatformMesh, gridHelper;
-        let cameraMode = 0; // 0: Dynamic, 1: Low Action, 2: Top-Down
-
-        const players = new Map(); // id -> Player3D
-        const dataCrystals = [];
-        const shockwaves3D = [];
-        const particles3D = [];
-        let bossEntity = null;
-
-        function initThreeJS() {
-            const container = document.getElementById('threeCanvasContainer');
-            const w = container.clientWidth || 800;
-            const h = container.clientHeight || 500;
-
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x040711);
-            scene.fog = new THREE.FogExp2(0x040711, 0.012);
-
-            camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 300);
-            camera.position.set(0, 32, 38);
-            camera.lookAt(0, 0, 0);
-
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(w, h);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            container.innerHTML = '';
-            container.appendChild(renderer.domElement);
-
-            // Lights
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
-            scene.add(ambientLight);
-
-            const dirLight = new THREE.DirectionalLight(0x00f3ff, 0.9);
-            dirLight.position.set(20, 40, 20);
-            scene.add(dirLight);
-
-            const pinkLight = new THREE.PointLight(0xff007f, 1.2, 60);
-            pinkLight.position.set(-20, 15, -20);
-            scene.add(pinkLight);
-
-            // Build 3D Cyber Octagonal Stage
-            buildCyberStage();
-
-            // Spawn initial 3D Data Crystals
-            for (let i = 0; i < 14; i++) {
-                spawn3DCrystal();
-            }
-        }
-
-        function buildCyberStage() {
-            // Inner Core Octagon Platform (Radius 19)
-            const innerGeo = new THREE.CylinderGeometry(19, 17, 2.5, 16);
-            const innerMat = new THREE.MeshStandardMaterial({
-                color: 0x0f172a,
-                metalness: 0.7,
-                roughness: 0.25
-            });
-            innerPlatformMesh = new THREE.Mesh(innerGeo, innerMat);
-            innerPlatformMesh.position.y = -1.25;
-            scene.add(innerPlatformMesh);
-
-            // Inner Neon Edge Ring
-            const innerEdgeGeo = new THREE.RingGeometry(18.6, 19.1, 32);
-            const innerEdgeMat = new THREE.MeshBasicMaterial({ color: 0x00f3ff, side: THREE.DoubleSide });
-            const innerEdge = new THREE.Mesh(innerEdgeGeo, innerEdgeMat);
-            innerEdge.rotation.x = -Math.PI / 2;
-            innerEdge.position.y = 0.03;
-            scene.add(innerEdge);
-
-            // Outer Collapsible Ring (Radius 19 to 26)
-            const outerShape = new THREE.Shape();
-            outerShape.absarc(0, 0, 26, 0, Math.PI * 2, false);
-            const holePath = new THREE.Path();
-            holePath.absarc(0, 0, 19.2, 0, Math.PI * 2, true);
-            outerShape.holes.push(holePath);
-
-            const extrudeSettings = { depth: 2, bevelEnabled: false, curveSegments: 24 };
-            const outerGeo = new THREE.ExtrudeGeometry(outerShape, extrudeSettings);
-            outerGeo.rotateX(Math.PI / 2);
-            const outerMat = new THREE.MeshStandardMaterial({
-                color: 0x1e293b,
-                emissive: 0x00f3ff,
-                emissiveIntensity: 0.15,
-                metalness: 0.6,
-                roughness: 0.3
-            });
-            outerRingMesh = new THREE.Mesh(outerGeo, outerMat);
-            outerRingMesh.position.y = 0;
-            scene.add(outerRingMesh);
-
-            // Cyber Grid on Floor
-            gridHelper = new THREE.PolarGridHelper(25.5, 16, 8, 64, 0x00f3ff, 0x1e293b);
-            gridHelper.position.y = 0.05;
-            scene.add(gridHelper);
-
-            // Surrounding Lower Abyss Wireframe Grid
-            const abyssGrid = new THREE.GridHelper(160, 40, 0xff007f, 0x0b132b);
-            abyssGrid.position.y = -18;
-            scene.add(abyssGrid);
-        }
-
-        // 3D Player Hover-Tank Class
-        class Player3D {
-            constructor(id, name, colorHex, isAi = false) {
-                this.id = id;
-                this.name = name;
-                this.colorHex = colorHex;
-                this.isAi = isAi;
-
-                this.x = (Math.random() - 0.5) * 18;
-                this.y = 8; // Drop from sky on spawn!
-                this.z = (Math.random() - 0.5) * 18;
-                this.vx = 0;
-                this.vy = 0;
-                this.vz = 0;
-
-                this.inputX = 0;
-                this.inputZ = 0;
-                this.radius = 1.65;
-                this.score = 0;
-                this.boostTimer = 0;
-                this.dashCooldown = 0;
-                this.pulseCooldown = 0;
-                this.lastHitBy = null;
-                this.respawnTimer = 0;
-
-                // Build 3D Hover-Tank Mesh Group
-                this.group = new THREE.Group();
-
-                // Main Chassis
-                const bodyGeo = new THREE.CylinderGeometry(1.2, 1.65, 0.9, 8);
-                const bodyMat = new THREE.MeshStandardMaterial({
-                    color: 0x0f172a,
-                    metalness: 0.8,
-                    roughness: 0.2
-                });
-                this.bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
-                this.bodyMesh.position.y = 0.45;
-                this.group.add(this.bodyMesh);
-
-                // Glowing Neon Bumper Ring
-                const ringGeo = new THREE.TorusGeometry(1.55, 0.18, 8, 24);
-                ringGeo.rotateX(Math.PI / 2);
-                this.ringMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(colorHex) });
-                this.ringMesh = new THREE.Mesh(ringGeo, this.ringMat);
-                this.ringMesh.position.y = 0.35;
-                this.group.add(this.ringMesh);
-
-                // Top Turret / Cockpit Core
-                const coreGeo = new THREE.OctahedronGeometry(0.75, 0);
-                this.coreMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(colorHex), wireframe: false });
-                this.coreMesh = new THREE.Mesh(coreGeo, this.coreMat);
-                this.coreMesh.position.y = 1.25;
-                this.group.add(this.coreMesh);
-
-                // Direction Nose Cone
-                const noseGeo = new THREE.ConeGeometry(0.35, 0.9, 4);
-                noseGeo.rotateX(Math.PI / 2);
-                const noseMesh = new THREE.Mesh(noseGeo, this.ringMat);
-                noseMesh.position.set(0, 0.6, 1.5);
-                this.group.add(noseMesh);
-
-                scene.add(this.group);
-
-                // Create HTML 2D Floating Name & Score Tag
-                this.labelEl = document.createElement('div');
-                this.labelEl.className = 'player-label-3d flex flex-col items-center';
-                document.getElementById('labels3DLayer').appendChild(this.labelEl);
-                this.updateLabelHTML();
-
-                // Spawn entrance beam
-                spawn3DParticles(this.x, 2, this.z, colorHex, 18);
-            }
-
-            setColor(hex) {
-                this.colorHex = hex;
-                this.ringMat.color.set(hex);
-                this.coreMat.color.set(hex);
-                this.updateLabelHTML();
-            }
-
-            updateLabelHTML() {
-                if (!this.labelEl) return;
-                this.labelEl.innerHTML = `
-                    <div class="px-2 py-0.5 rounded-md bg-slate-950/90 border text-[10px] font-bold text-white shadow-lg flex items-center gap-1" style="border-color:${this.colorHex}">
-                        <span class="w-2 h-2 rounded-full" style="background:${this.colorHex}"></span>
-                        <span>${this.name}</span>
-                        <span class="font-mono text-amber-300 ml-1">${this.score}pt</span>
-                    </div>
-                `;
-            }
-
-            update() {
-                if (this.isAi) this.runAi();
-
-                const currentMaxRadius = outerRingCollapsed ? 19.0 : arenaRadius;
-                const distFromCenter = Math.hypot(this.x, this.z);
-
-                // Acceleration from Joystick
-                const moveSpeed = this.boostTimer > 0 ? 0.92 : 0.48;
-                if (this.y <= 0.5) {
-                    this.vx = this.vx * 0.88 + this.inputX * moveSpeed * 0.12;
-                    this.vz = this.vz * 0.88 + this.inputZ * moveSpeed * 0.12;
-                } else {
-                    // Air control
-                    this.vx = this.vx * 0.95 + this.inputX * moveSpeed * 0.05;
-                    this.vz = this.vz * 0.95 + this.inputZ * moveSpeed * 0.05;
-                }
-
-                if (this.boostTimer > 0) {
-                    this.boostTimer--;
-                    spawn3DParticles(this.x, this.y + 0.4, this.z, this.colorHex, 2);
-                }
-
-                // Gravity & Vertical Physics
-                if (this.y > 0 || this.vy > 0 || distFromCenter > currentMaxRadius) {
-                    this.vy -= 0.045; // Gravity
-                    this.y += this.vy;
-
-                    // Landing back on stage
-                    if (distFromCenter <= currentMaxRadius && this.y <= 0 && this.vy < 0 && this.y > -2.0) {
-                        if (this.vy < -0.45) {
-                            // Jump Stomp mini-shockwave on landing!
-                            create3DShockwave(this.x, this.z, this.colorHex, 5.5);
-                        }
-                        this.y = 0;
-                        this.vy = 0;
-                    }
-                }
-
-                this.x += this.vx;
-                this.z += this.vz;
-
-                // Rotate craft toward movement direction
-                if (Math.hypot(this.vx, this.vz) > 0.04) {
-                    const targetAngle = Math.atan2(this.vx, this.vz);
-                    this.group.rotation.y = targetAngle;
-                }
-                this.coreMesh.rotation.y += 0.08;
-
-                // Check Ring-Out (Knocked into the 3D Abyss!)
-                if (this.y < -14) {
-                    handlePlayerRingOut(this);
-                }
-
-                this.group.position.set(this.x, this.y, this.z);
-                if (this.dashCooldown > 0) this.dashCooldown--;
-                if (this.pulseCooldown > 0) this.pulseCooldown--;
-            }
-
-            runAi() {
-                const maxSafeRad = outerRingCollapsed ? 15 : 21;
-                const distFromCenter = Math.hypot(this.x, this.z);
-
-                // Priority 1: Recover to center if near edge!
-                if (distFromCenter > maxSafeRad) {
-                    this.inputX = -this.x / distFromCenter;
-                    this.inputZ = -this.z / distFromCenter;
-                    if (this.dashCooldown <= 0) triggerPlayerDash3D(this);
-                    return;
-                }
-
-                // Priority 2: Target Boss or nearest Crystal or Rival
-                let targetX = 0, targetZ = 0;
-                if (bossEntity) {
-                    targetX = bossEntity.mesh.position.x;
-                    targetZ = bossEntity.mesh.position.z;
-                } else if (dataCrystals.length > 0) {
-                    const c = dataCrystals[0];
-                    targetX = c.mesh.position.x;
-                    targetZ = c.mesh.position.z;
-                }
-
-                const dx = targetX - this.x;
-                const dz = targetZ - this.z;
+      });
+    }
+
+    // 20秒ごとのステージギミック
+    function triggerArenaEvent() {
+      sweeperState.active = !sweeperState.active;
+      sweeperBarGroup.visible = sweeperState.active;
+      const banner = document.getElementById('big-alert');
+      const statusEl = document.getElementById('stage-status');
+
+      if (sweeperState.active) {
+        statusEl.textContent = '⚠️ 回転ハンマーバー稼働中！ジャンプで飛び越えろ！';
+        banner.textContent = '⚠️ 巨大回転ハンマー出現！！ジャンプ(Y)で飛び越えろ！';
+        banner.classList.remove('hidden');
+        setTimeout(() => banner.classList.add('hidden'), 4000);
+        playSound('ko');
+      } else {
+        statusEl.textContent = '👑 中央の「王冠」を奪い合え！';
+        // ボーナスのキャンディシャワー
+        for (let i = 0; i < 6; i++) spawnCandy();
+        banner.textContent = '🍬 キャンディボーナス大量出現！！';
+        banner.classList.remove('hidden');
+        setTimeout(() => banner.classList.add('hidden'), 3500);
+        playSound('crown');
+      }
+    }
+
+    // ============================================================================
+    // 6. メイン物理ループ（手足パタパタ・押し合い・王冠・スイーパー判定）
+    // ============================================================================
+    function updateGamePhysics() {
+      const pList = Object.values(players);
+
+      // 1. 回転ハンマーバー（スイーパー）の更新
+      if (sweeperState.active) {
+        sweeperState.angle += sweeperState.speed;
+        sweeperBarGroup.rotation.y = sweeperState.angle;
+      }
+
+      // 2. 王冠（クラウン）の更新
+      crownState.angle += 0.05;
+      if (crownState.holderId && players[crownState.holderId]) {
+        const holder = players[crownState.holderId];
+        crownMesh.position.set(holder.x, holder.y + 4.3, holder.z);
+        crownMesh.rotation.y = crownState.angle;
+      } else {
+        crownState.holderId = null;
+        crownMesh.position.set(crownState.x, 1.3 + Math.sin(crownState.angle * 2) * 0.3, crownState.z);
+        crownMesh.rotation.y = crownState.angle;
+      }
+
+      // 3. 各キャラクターの移動とアニメーション
+      pList.forEach(p => {
+        if (p.spinCd > 0) p.spinCd--;
+        if (p.diveTimer > 0) p.diveTimer--;
+        if (p.spinAnimTimer > 0) p.spinAnimTimer--;
+
+        // CPUボットのわちゃわちゃAI
+        if (p.isBot) {
+          p.botDecisionTimer--;
+          if (p.botDecisionTimer <= 0) {
+            p.botDecisionTimer = 18 + Math.floor(Math.random() * 25);
+            const distCenter = Math.hypot(p.x, p.z);
+            if (distCenter > stageRadius * 0.68) {
+              // 落ちそうなら中央へ全力で戻る
+              p.joyX = -p.x / distCenter;
+              p.joyY = -p.z / distCenter;
+              if (Math.random() < 0.5) doDive(p);
+            } else if (!crownState.holderId) {
+              // 王冠が空いていれば王冠へ走る
+              const dx = crownState.x - p.x;
+              const dz = crownState.z - p.z;
+              const d = Math.hypot(dx, dz) || 1;
+              p.joyX = dx / d;
+              p.joyY = dz / d;
+            } else {
+              // 近くのプレイヤーに突격して押し合い！
+              const others = pList.filter(o => o.id !== p.id);
+              if (others.length > 0) {
+                const target = others[Math.floor(Math.random() * others.length)];
+                const dx = target.x - p.x;
+                const dz = target.z - p.z;
                 const d = Math.hypot(dx, dz) || 1;
-                this.inputX = dx / d;
-                this.inputZ = dz / d;
-
-                // AI Uses abilities
-                if (this.pulseCooldown <= 0 && Math.random() < 0.015) {
-                    for (const [, other] of players) {
-                        if (other.id !== this.id && Math.hypot(other.x - this.x, other.z - this.z) < 7) {
-                            triggerPlayerPulse3D(this);
-                            break;
-                        }
-                    }
-                }
-                if (this.dashCooldown <= 0 && Math.random() < 0.01) triggerPlayerDash3D(this);
-                if (this.y === 0 && Math.random() < 0.006) triggerPlayerJump3D(this);
+                p.joyX = dx / d;
+                p.joyY = dz / d;
+                if (d < 5.5 && Math.random() < 0.45) doSpinAttack(p);
+                else if (d < 8 && Math.random() < 0.35) doDive(p);
+              }
             }
-
-            destroy() {
-                scene.remove(this.group);
-                if (this.labelEl) this.labelEl.remove();
-            }
+          }
+          // 回転バーが来たらジャンプするAI
+          if (sweeperState.active && p.y <= 0.1 && Math.random() < 0.04) doJump(p);
         }
 
-        function handlePlayerRingOut(victim) {
-            playSound('ko');
-            spawn3DParticles(victim.x, -5, victim.z, '#ff007f', 25);
+        // 加速度と移動
+        const moveAccel = crownState.holderId === p.id ? 0.052 : 0.045;
+        p.vx += p.joyX * moveAccel;
+        p.vz += p.joyY * moveAccel;
 
-            // Credit attacker if knocked out by someone!
-            if (victim.lastHitBy && players.has(victim.lastHitBy) && victim.lastHitBy !== victim.id) {
-                const attacker = players.get(victim.lastHitBy);
-                const stolen = Math.floor(victim.score * 0.25);
-                victim.score = Math.max(0, victim.score - stolen);
-                attacker.score += 300 + stolen;
-                attacker.updateLabelHTML();
-                createDanmakuItem(`💥 ${attacker.name} が ${victim.name} を場外KO!! (+${300 + stolen}pt)`, attacker.colorHex);
-            } else {
-                victim.score = Math.max(0, victim.score - 50);
-                createDanmakuItem(`💫 ${victim.name} が場外へ落下！`, '#94a3b8');
-            }
+        p.x += p.vx;
+        p.z += p.vz;
+        p.vx *= 0.87;
+        p.vz *= 0.87;
 
-            victim.updateLabelHTML();
-            updateLeaderboardUI();
-
-            // Respawn from sky at center
-            victim.x = (Math.random() - 0.5) * 10;
-            victim.z = (Math.random() - 0.5) * 10;
-            victim.y = 14;
-            victim.vx = 0;
-            victim.vy = 0;
-            victim.vz = 0;
-            victim.lastHitBy = null;
+        // ジャンプと重力
+        const distFromCenter = Math.hypot(p.x, p.z);
+        if (distFromCenter <= stageRadius + 0.7 && p.y >= -0.4) {
+          p.y += p.vy;
+          if (p.y > 0) {
+            p.vy -= 0.032;
+          } else {
+            p.y = 0;
+            p.vy = 0;
+          }
+        } else {
+          // ステージ場外へ落下中！
+          p.y += p.vy;
+          p.vy -= 0.048;
         }
 
-        /******************************************************************
-         * 4. 3D ACTIONS, COLLISIONS, CRYSTALS & BOSS RAID
-         ******************************************************************/
-        function triggerPlayerDash3D(p) {
-            if (p.dashCooldown > 0) return;
-            p.dashCooldown = 38;
-            p.boostTimer = 20;
-            const mag = Math.hypot(p.inputX, p.inputZ);
-            const dx = mag > 0.1 ? p.inputX / mag : Math.sin(p.group.rotation.y);
-            const dz = mag > 0.1 ? p.inputZ / mag : Math.cos(p.group.rotation.y);
-            p.vx += dx * 1.35;
-            p.vz += dz * 1.35;
-            playSound('dash');
-            spawn3DParticles(p.x, p.y + 0.5, p.z, p.colorHex, 15);
+        // 王冠を持っているキャラは1.3倍に巨大化！
+        const targetScale = crownState.holderId === p.id ? 1.32 : 1.0;
+        p.mesh.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1);
+
+        // 進行方向を向く ＆ 二頭身手足パタパタアニメーション
+        const speed = Math.hypot(p.vx, p.vz);
+        if (speed > 0.02) {
+          p.angle = Math.atan2(p.vx, p.vz);
+          p.walkCycle += speed * 2.2;
         }
 
-        function triggerPlayerJump3D(p) {
-            if (p.y > 0.5) return; // Already in air
-            p.vy = 0.82;
-            playSound('jump');
-            spawn3DParticles(p.x, 0.2, p.z, '#ffb800', 10);
+        p.mesh.position.set(p.x, p.y, p.z);
+
+        const ud = p.mesh.userData;
+        if (p.spinAnimTimer > 0) {
+          // 回転アタック中はコマのように高速スピン
+          p.mesh.rotation.y += 0.65;
+        } else {
+          p.mesh.rotation.y = p.angle;
         }
 
-        function triggerPlayerPulse3D(p) {
-            if (p.pulseCooldown > 0) return;
-            p.pulseCooldown = 50;
-            playSound('pulse');
-
-            const maxRadius = 9.5;
-            create3DShockwave(p.x, p.z, p.colorHex, maxRadius);
-
-            // Blast nearby rivals toward the edge!
-            for (const [, other] of players) {
-                if (other.id === p.id) continue;
-                const dx = other.x - p.x;
-                const dz = other.z - p.z;
-                const dist = Math.hypot(dx, dz) || 1;
-                if (dist < maxRadius && Math.abs(other.y - p.y) < 4) {
-                    const force = (1 - dist / maxRadius) * 1.65;
-                    other.vx += (dx / dist) * force;
-                    other.vz += (dz / dist) * force;
-                    other.vy = 0.35; // Pop up into air!
-                    other.lastHitBy = p.id;
-                    spawn3DParticles(other.x, other.y + 1, other.z, p.colorHex, 12);
-                }
-            }
-
-            // Damage Boss if close
-            if (bossEntity) {
-                const bDist = Math.hypot(bossEntity.mesh.position.x - p.x, bossEntity.mesh.position.z - p.z);
-                if (bDist < maxRadius + 2.5) {
-                    damageBoss(p, 150);
-                }
-            }
+        if (ud && !ud.isCustomGLB && ud.bodyGroup) {
+          if (p.diveTimer > 0) {
+            // ダイブ中は水平にヘッドスライディング姿勢！
+            ud.bodyGroup.rotation.x = Math.PI / 2.2;
+            ud.bodyGroup.position.y = 0.6;
+          } else {
+            // 走ると前傾姿勢で手足がパタパタ動く
+            ud.bodyGroup.rotation.x = Math.min(0.35, speed * 0.7);
+            ud.bodyGroup.position.y = Math.abs(Math.sin(p.walkCycle)) * 0.22;
+            const swing = Math.sin(p.walkCycle) * Math.min(0.9, speed * 3.5);
+            ud.armL.rotation.x = swing;
+            ud.armR.rotation.x = -swing;
+            ud.legL.rotation.x = -swing;
+            ud.legR.rotation.x = swing;
+          }
         }
 
-        function create3DShockwave(x, z, colorHex, maxRadius) {
-            const geo = new THREE.RingGeometry(0.5, 1.1, 32);
-            geo.rotateX(-Math.PI / 2);
-            const mat = new THREE.MeshBasicMaterial({
-                color: new THREE.Color(colorHex),
-                side: THREE.DoubleSide,
-                transparent: true,
-                opacity: 0.95
-            });
-            const mesh = new THREE.Mesh(geo, mat);
-            mesh.position.set(x, 0.25, z);
-            scene.add(mesh);
-            shockwaves3D.push({ mesh, scale: 1, maxScale: maxRadius, alpha: 1.0 });
+        // 王冠の拾得判定
+        if (!crownState.holderId && p.y >= 0 && Math.hypot(p.x - crownState.x, p.z - crownState.z) < 2.2) {
+          crownState.holderId = p.id;
+          p.score += 100;
+          playSound('crown');
+          showFloatingText(p.x, p.y + 3, p.z, '👑 CROWN GET! +100', '#facc15');
+          spawnDanmaku(`👑 ${p.name} が黄金の王冠を奪取して巨大化！！`, '#facc15');
+          updateRankingUI();
         }
 
-        function spawn3DCrystal(isGold = false) {
-            const gold = isGold || Math.random() < 0.2;
-            const geo = new THREE.OctahedronGeometry(gold ? 1.05 : 0.7, 0);
-            const mat = new THREE.MeshStandardMaterial({
-                color: gold ? 0xffb800 : 0x00f3ff,
-                emissive: gold ? 0xff8800 : 0x00aaff,
-                emissiveIntensity: 0.8,
-                metalness: 0.3,
-                roughness: 0.1
-            });
-            const mesh = new THREE.Mesh(geo, mat);
-            const angle = Math.random() * Math.PI * 2;
-            const rad = 3 + Math.random() * (outerRingCollapsed ? 14 : 20);
-            mesh.position.set(Math.cos(angle) * rad, 1.0, Math.sin(angle) * rad);
-            scene.add(mesh);
-            dataCrystals.push({
-                mesh,
-                value: gold ? 100 : 25,
-                color: gold ? '#ffb800' : '#00f3ff'
-            });
+        // 回転ハンマーバーとの衝突判定
+        if (sweeperState.active && p.y < 1.5 && distFromCenter < stageRadius * 0.92) {
+          // バーの直線との距離を計算
+          const barCos = Math.cos(-sweeperState.angle);
+          const barSin = Math.sin(-sweeperState.angle);
+          const perpDist = Math.abs(p.x * barSin + p.z * barCos);
+          if (perpDist < 1.35) {
+            // ハンマーバーに弾き飛ばされる！
+            p.vx += -barSin * 1.1;
+            p.vz += -barCos * 1.1;
+            p.vy = 0.45;
+            playSound('boing');
+            showFloatingText(p.x, p.y + 2, p.z, '💥 HAMMER HIT!', '#f43f5e');
+          }
         }
 
-        function spawn3DParticles(x, y, z, colorHex, count = 10) {
-            const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(colorHex) });
-            const geo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
-            for (let i = 0; i < count; i++) {
-                const mesh = new THREE.Mesh(geo, mat);
-                mesh.position.set(x, y, z);
-                scene.add(mesh);
-                particles3D.push({
-                    mesh,
-                    vx: (Math.random() - 0.5) * 0.7,
-                    vy: Math.random() * 0.55 + 0.1,
-                    vz: (Math.random() - 0.5) * 0.7,
-                    life: 25 + Math.random() * 15
-                });
-            }
+        // 場外リングアウト（落下KO）判定
+        if (p.y < -11) {
+          handlePlayerRingOut(p);
         }
+      });
 
-        /******************************************************************
-         * 5. DYNAMIC 3D STAGE EVENTS (Every 25s or Manual Button)
-         ******************************************************************/
-        function triggerStageEvent(type) {
-            const banner = document.getElementById('eventAlertBanner');
-            banner.classList.remove('hidden');
+      // 4. プレイヤー同士の「ぷにぷに押し合い・弾き飛ばし」衝突判定
+      for (let i = 0; i < pList.length; i++) {
+        for (let j = i + 1; j < pList.length; j++) {
+          const a = pList[i];
+          const b = pList[j];
+          if (Math.abs(a.y - b.y) > 2.2) continue;
 
-            if (type === 'BOSS') {
-                banner.textContent = '👾 WARNING: 巨大3Dサイバーボス出現！体当たり＆レーザーで撃破せよ！';
-                spawnCyberBoss();
-            } else if (type === 'SHRINK') {
-                outerRingCollapsed = !outerRingCollapsed;
-                banner.textContent = outerRingCollapsed
-                    ? '⚠️ DANGER: アウターリング崩落！ステージが狭くなった！'
-                    : '✅ STAGE RESTORED: 外周フロアが復活！';
-            } else if (type === 'METEOR') {
-                banner.textContent = '⭐ GOLDEN STAR SHOWER! 高得点クリスタル大量降下！';
-                for (let i = 0; i < 12; i++) spawn3DCrystal(true);
-                playSound('join');
-            }
+          const dx = b.x - a.x;
+          const dz = b.z - a.z;
+          const dist = Math.hypot(dx, dz);
+          const minDist = (crownState.holderId === a.id || crownState.holderId === b.id) ? 2.6 : 2.15;
 
-            setTimeout(() => banner.classList.add('hidden'), 5000);
+          if (dist < minDist && dist > 0.001) {
+            const nx = dx / dist;
+            const nz = dz / dist;
+            const overlap = minDist - dist;
+
+            // めり込み防止の押し返し
+            a.x -= nx * overlap * 0.5;
+            a.z -= nz * overlap * 0.5;
+            b.x += nx * overlap * 0.5;
+            b.z += nz * overlap * 0.5;
+
+            // ダイブ中や王冠所持者は相手を強く吹っ飛ばす！
+            const aPower = (a.diveTimer > 0 ? 1.6 : 1.0) * (crownState.holderId === a.id ? 1.4 : 1.0);
+            const bPower = (b.diveTimer > 0 ? 1.6 : 1.0) * (crownState.holderId === b.id ? 1.4 : 1.0);
+            const bounce = 0.36;
+
+            a.vx -= nx * bounce * bPower;
+            a.vz -= nz * bounce * bPower;
+            b.vx += nx * bounce * aPower;
+            b.vz += nz * bounce * aPower;
+
+            a.lastHitBy = b.id;
+            b.lastHitBy = a.id;
+            playSound('boing');
+          }
         }
+      }
 
-        function spawnCyberBoss() {
-            if (bossEntity) {
-                scene.remove(bossEntity.mesh);
-                bossEntity = null;
-            }
-            const group = new THREE.Group();
-            const coreGeo = new THREE.IcosahedronGeometry(3.2, 1);
-            const coreMat = new THREE.MeshStandardMaterial({
-                color: 0xff007f,
-                emissive: 0xff0055,
-                emissiveIntensity: 0.5,
-                wireframe: true
-            });
-            const coreMesh = new THREE.Mesh(coreGeo, coreMat);
-            group.add(coreMesh);
+      // 5. キャンディ（得点アイテム）取得判定
+      candies.forEach(c => {
+        c.phase += 0.07;
+        c.mesh.rotation.y += 0.05;
+        c.mesh.position.y = 0.8 + Math.sin(c.phase) * 0.25;
 
-            const innerGeo = new THREE.OctahedronGeometry(2.1, 0);
-            const innerMat = new THREE.MeshBasicMaterial({ color: 0xffb800 });
-            const innerMesh = new THREE.Mesh(innerGeo, innerMat);
-            group.add(innerMesh);
-
-            group.position.set(0, 3.2, 0);
-            scene.add(group);
-
-            bossEntity = {
-                mesh: group,
-                hp: 1000,
-                maxHp: 1000
-            };
-            playSound('ko');
-        }
-
-        function damageBoss(attacker, dmg) {
-            if (!bossEntity) return;
-            bossEntity.hp -= dmg;
-            attacker.score += dmg;
-            attacker.updateLabelHTML();
-            spawn3DParticles(bossEntity.mesh.position.x, 3, bossEntity.mesh.position.z, '#ff007f', 12);
-            playSound('coin');
-
-            if (bossEntity.hp <= 0) {
-                attacker.score += 500;
-                createDanmakuItem(`🎉 ${attacker.name} が3Dサイバーボスを撃破!! (+500pt)`, '#ffb800');
-                for (let i = 0; i < 10; i++) spawn3DCrystal(true);
-                scene.remove(bossEntity.mesh);
-                bossEntity = null;
-            }
-            updateLeaderboardUI();
-        }
-
-        /******************************************************************
-         * 6. MAIN 3D ANIMATION & PHYSICS LOOP
-         ******************************************************************/
-        function animate3D() {
-            requestAnimationFrame(animate3D);
-
-            // Maintain crystals
-            while (dataCrystals.length < 14) spawn3DCrystal();
-
-            // Animate Collapsible Outer Floor Ring
-            if (outerRingMesh) {
-                const targetY = outerRingCollapsed ? -22 : 0;
-                outerRingMesh.position.y += (targetY - outerRingMesh.position.y) * 0.08;
-            }
-
-            // Update Boss
-            if (bossEntity) {
-                bossEntity.mesh.rotation.y += 0.03;
-                bossEntity.mesh.rotation.x += 0.015;
-            }
-
-            // Update Players & Check Crystal Pickups
-            const pList = Array.from(players.values());
-            for (const p of pList) {
-                p.update();
-
-                // Crystal collection
-                for (let i = dataCrystals.length - 1; i >= 0; i--) {
-                    const c = dataCrystals[i];
-                    c.mesh.rotation.y += 0.02;
-                    const dist = Math.hypot(p.x - c.mesh.position.x, p.z - c.mesh.position.z);
-                    if (dist < p.radius + 1.1 && Math.abs(p.y - c.mesh.position.y) < 2.5) {
-                        p.score += c.value;
-                        p.updateLabelHTML();
-                        spawn3DParticles(c.mesh.position.x, 1, c.mesh.position.z, c.color, 10);
-                        if (!p.isAi) playSound('coin');
-                        scene.remove(c.mesh);
-                        dataCrystals.splice(i, 1);
-                        updateLeaderboardUI();
-                    }
-                }
-
-                // Boss Ramming Collision
-                if (bossEntity) {
-                    const bDist = Math.hypot(p.x - bossEntity.mesh.position.x, p.z - bossEntity.mesh.position.z);
-                    if (bDist < p.radius + 3.2) {
-                        const nx = (p.x - bossEntity.mesh.position.x) / (bDist || 1);
-                        const nz = (p.z - bossEntity.mesh.position.z) / (bDist || 1);
-                        p.vx = nx * 1.25;
-                        p.vz = nz * 1.25;
-                        damageBoss(p, p.boostTimer > 0 ? 120 : 50);
-                    }
-                }
-            }
-
-            // Player-to-Player High-Impact 3D Bumper Physics!
-            for (let i = 0; i < pList.length; i++) {
-                for (let j = i + 1; j < pList.length; j++) {
-                    const p1 = pList[i];
-                    const p2 = pList[j];
-                    const dx = p2.x - p1.x;
-                    const dz = p2.z - p1.z;
-                    const dist = Math.hypot(dx, dz) || 0.01;
-                    const minDist = p1.radius + p2.radius;
-
-                    if (dist < minDist && Math.abs(p1.y - p2.y) < 2.0) {
-                        const nx = dx / dist;
-                        const nz = dz / dist;
-                        const overlap = (minDist - dist) * 0.5;
-                        p1.x -= nx * overlap;
-                        p1.z -= nz * overlap;
-                        p2.x += nx * overlap;
-                        p2.z += nz * overlap;
-
-                        // Boosted player sends the other flying!
-                        const p1Power = p1.boostTimer > 0 ? 1.55 : 0.75;
-                        const p2Power = p2.boostTimer > 0 ? 1.55 : 0.75;
-
-                        p1.vx -= nx * p2Power;
-                        p1.vz -= nz * p2Power;
-                        p2.vx += nx * p1Power;
-                        p2.vz += nz * p1Power;
-
-                        p1.lastHitBy = p2.id;
-                        p2.lastHitBy = p1.id;
-
-                        spawn3DParticles((p1.x + p2.x) / 2, 1, (p1.z + p2.z) / 2, '#ffffff', 8);
-                    }
-                }
-            }
-
-            // Update 3D Shockwaves
-            for (let i = shockwaves3D.length - 1; i >= 0; i--) {
-                const sw = shockwaves3D[i];
-                sw.scale += (sw.maxScale - sw.scale) * 0.25;
-                sw.mesh.scale.set(sw.scale, sw.scale, 1);
-                sw.alpha -= 0.05;
-                sw.mesh.material.opacity = Math.max(0, sw.alpha);
-                if (sw.alpha <= 0) {
-                    scene.remove(sw.mesh);
-                    shockwaves3D.splice(i, 1);
-                }
-            }
-
-            // Update 3D Particles
-            for (let i = particles3D.length - 1; i >= 0; i--) {
-                const pt = particles3D[i];
-                pt.mesh.position.x += pt.vx;
-                pt.mesh.position.y += pt.vy;
-                pt.mesh.position.z += pt.vz;
-                pt.vy -= 0.02;
-                pt.life--;
-                pt.mesh.scale.multiplyScalar(0.94);
-                if (pt.life <= 0) {
-                    scene.remove(pt.mesh);
-                    particles3D.splice(i, 1);
-                }
-            }
-
-            // Update Camera Framing
-            updateCameraPosition();
-
-            // Render 3D Scene & Sync 2D HTML Labels
-            renderer.render(scene, camera);
-            update3DLabelsPosition();
-        }
-
-        function updateCameraPosition() {
-            const localP = players.get(controllerProfile.id) || players.values().next().value;
-            if (cameraMode === 0) {
-                // Dynamic Overview
-                camera.position.lerp(new THREE.Vector3(0, 31, 37), 0.05);
-                camera.lookAt(0, 0, 0);
-            } else if (cameraMode === 1 && localP) {
-                // Low Action Follow Cam
-                const targetPos = new THREE.Vector3(localP.x * 0.6, 16, localP.z * 0.6 + 24);
-                camera.position.lerp(targetPos, 0.08);
-                camera.lookAt(localP.x * 0.4, 1, localP.z * 0.4);
-            } else {
-                // Top-Down Radar View
-                camera.position.lerp(new THREE.Vector3(0, 48, 4), 0.06);
-                camera.lookAt(0, 0, 0);
-            }
-        }
-
-        function cycleCameraMode() {
-            cameraMode = (cameraMode + 1) % 3;
-            const labels = ['Dynamic Cam', 'Action Cam', 'Top-Down'];
-            document.getElementById('camModeLabel').textContent = labels[cameraMode];
-        }
-
-        function update3DLabelsPosition() {
-            const container = document.getElementById('threeViewport');
-            if (!container) return;
-            const width = container.clientWidth;
-            const height = container.clientHeight;
-
-            for (const [, p] of players) {
-                if (!p.labelEl) continue;
-                const pos = new THREE.Vector3(p.x, p.y + 2.4, p.z);
-                pos.project(camera);
-
-                if (pos.z > 1) {
-                    p.labelEl.style.opacity = '0';
-                } else {
-                    const x = (pos.x * 0.5 + 0.5) * width;
-                    const y = (-(pos.y * 0.5) + 0.5) * height;
-                    p.labelEl.style.opacity = '1';
-                    p.labelEl.style.left = `${x}px`;
-                    p.labelEl.style.top = `${y}px`;
-                }
-            }
-        }
-
-        /******************************************************************
-         * 7. PACKET PROCESSING & TELEMETRY LOGGING
-         ******************************************************************/
-        function processArenaPacket(data) {
-            packetCounterThisSec++;
-            let p = players.get(data.id);
-
-            if (!p) {
-                p = new Player3D(data.id, data.name || 'Player', data.color || '#00ff66', false);
-                players.set(data.id, p);
-                playSound('join');
-                updateLeaderboardUI();
-                showToast(`🚀 ${p.name} が3Dアリーナに参戦しました！`);
-            }
-
-            if (data.name && p.name !== data.name) {
-                p.name = data.name;
-                p.updateLabelHTML();
-                updateLeaderboardUI();
-            }
-            if (data.color && p.colorHex !== data.color) {
-                p.setColor(data.color);
-                updateLeaderboardUI();
-            }
-
-            if (data.type === 'MOVE') {
-                p.inputX = Number(data.x) || 0;
-                p.inputZ = Number(data.y) || 0;
-            } else if (data.type === 'ACTION') {
-                if (data.action === 'DASH') triggerPlayerDash3D(p);
-                if (data.action === 'PULSE') triggerPlayerPulse3D(p);
-                if (data.action === 'JUMP') triggerPlayerJump3D(p);
-            } else if (data.type === 'DANMAKU') {
-                createDanmakuItem(data.text, p.colorHex);
-            }
-
-            // Telemetry Log
-            if (Math.random() < 0.25 || data.type !== 'MOVE') {
-                const logBox = document.getElementById('packetLogContainer');
-                if (logBox) {
-                    const div = document.createElement('div');
-                    div.className = 'truncate border-l-2 pl-1';
-                    div.style.borderColor = p.colorHex;
-                    div.innerHTML = `<span class="text-cyan-300">${p.name}</span> <span class="text-slate-400">${data.type}</span> ${data.action || ''}`;
-                    logBox.appendChild(div);
-                    while (logBox.children.length > 14) logBox.removeChild(logBox.firstChild);
-                    logBox.scrollTop = logBox.scrollHeight;
-                }
-            }
-        }
-
-        /******************************************************************
-         * 8. SMARTPHONE JOYSTICK & KEYBOARD CONTROLS
-         ******************************************************************/
-        const joystickZone = document.getElementById('joystickZone');
-        const joystickKnob = document.getElementById('joystickKnob');
-        const coordText = document.getElementById('joystickCoordText');
-        let isDraggingStick = false;
-        let lastMoveSentTime = 0;
-
-        function handleStickMove(clientX, clientY) {
-            const rect = joystickZone.getBoundingClientRect();
-            const cx = rect.left + rect.width / 2;
-            const cy = rect.top + rect.height / 2;
-            const maxDist = rect.width / 2 - 18;
-
-            let dx = clientX - cx;
-            let dy = clientY - cy;
-            const dist = Math.hypot(dx, dy);
-            if (dist > maxDist) {
-                dx = (dx / dist) * maxDist;
-                dy = (dy / dist) * maxDist;
-            }
-
-            joystickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
-            const nx = Number((dx / maxDist).toFixed(2));
-            const ny = Number((dy / maxDist).toFixed(2));
-            coordText.textContent = `X:${nx.toFixed(1)} Y:${ny.toFixed(1)}`;
-
-            const now = performance.now();
-            if (now - lastMoveSentTime > 35 || (nx === 0 && ny === 0)) {
-                lastMoveSentTime = now;
-                sendNetworkPacket({ type: 'MOVE', x: nx, y: ny });
-            }
-        }
-
-        function resetStick() {
-            isDraggingStick = false;
-            joystickKnob.style.transform = 'translate(0px, 0px)';
-            coordText.textContent = 'X:0.0 Y:0.0';
-            sendNetworkPacket({ type: 'MOVE', x: 0, y: 0 });
-        }
-
-        joystickZone.addEventListener('pointerdown', (e) => {
-            isDraggingStick = true;
-            joystickZone.setPointerCapture(e.pointerId);
-            handleStickMove(e.clientX, e.clientY);
+        pList.forEach(p => {
+          if (p.y >= -0.2 && Math.hypot(p.x - c.mesh.position.x, p.z - c.mesh.position.z) < 1.9) {
+            p.score += 20;
+            showFloatingText(p.x, p.y + 2, p.z, '+20 🍬', '#00f5d4');
+            const ang = Math.random() * Math.PI * 2;
+            const rad = 3 + Math.random() * (stageRadius - 5);
+            c.mesh.position.set(Math.cos(ang) * rad, 0.8, Math.sin(ang) * rad);
+            updateRankingUI();
+          }
         });
-        joystickZone.addEventListener('pointermove', (e) => {
-            if (isDraggingStick) handleStickMove(e.clientX, e.clientY);
-        });
-        joystickZone.addEventListener('pointerup', resetStick);
-        joystickZone.addEventListener('pointercancel', resetStick);
+      });
 
-        // Keyboard Controls for PC Testing
-        const keysDown = new Set();
-        window.addEventListener('keydown', (e) => {
-            if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
-            keysDown.add(e.code);
-            if (e.code === 'Space' || e.code === 'KeyJ') triggerControllerAction('PULSE');
-            if (e.code === 'ShiftLeft' || e.code === 'KeyK') triggerControllerAction('DASH');
-            if (e.code === 'KeyE' || e.code === 'KeyL') triggerControllerAction('JUMP');
-            updateKeyStick();
-        });
-        window.addEventListener('keyup', (e) => {
-            if (keysDown.has(e.code)) {
-                keysDown.delete(e.code);
-                updateKeyStick();
-            }
-        });
+      // 王冠を持っている人には毎フレーム少しボーナスが入る
+      if (crownState.holderId && players[crownState.holderId] && Math.random() < 0.08) {
+        players[crownState.holderId].score += 2;
+        updateRankingUI();
+      }
 
-        function updateKeyStick() {
-            let kx = 0, ky = 0;
-            if (keysDown.has('ArrowLeft') || keysDown.has('KeyA')) kx -= 1;
-            if (keysDown.has('ArrowRight') || keysDown.has('KeyD')) kx += 1;
-            if (keysDown.has('ArrowUp') || keysDown.has('KeyW')) ky -= 1;
-            if (keysDown.has('ArrowDown') || keysDown.has('KeyS')) ky += 1;
-            if (kx !== 0 && ky !== 0) { kx *= 0.71; ky *= 0.71; }
-            joystickKnob.style.transform = `translate(${kx * 30}px, ${ky * 30}px)`;
-            sendNetworkPacket({ type: 'MOVE', x: kx, y: ky });
+      // 自分のスマホ画面のスコア＆クールダウン表示を更新
+      const me = players[myClientId];
+      if (me) {
+        document.getElementById('ctrl-score-num').textContent = me.score;
+        const cdEl = document.getElementById('spin-cd-text');
+        cdEl.textContent = me.spinCd > 0 ? `WAIT ${(me.spinCd / 60).toFixed(1)}s` : 'READY!';
+      }
+    }
+
+    // 場外へ落ちたときの処理（王冠ドロップ＆キルボーナス）
+    function handlePlayerRingOut(victim) {
+      playSound('ko');
+
+      // もし王冠を持っていたらステージ中央付近にポロッと落とす！
+      if (crownState.holderId === victim.id) {
+        crownState.holderId = null;
+        crownState.x = (Math.random() - 0.5) * 6;
+        crownState.z = (Math.random() - 0.5) * 6;
+        spawnDanmaku(`👑 ${victim.name} が転落して王冠を落としたぞ！！チャンス！`, '#facc15');
+      }
+
+      if (victim.lastHitBy && players[victim.lastHitBy] && victim.lastHitBy !== victim.id) {
+        const killer = players[victim.lastHitBy];
+        killer.score += 150;
+        showFloatingText(killer.x, killer.y + 3, killer.z, `🔥 KO! +150pt`, '#ff477e');
+        spawnDanmaku(`💥 ${killer.name} が ${victim.name} を場外へ突き落とした！ (+150pt)`, killer.color);
+      } else {
+        showFloatingText(0, 3, 0, `😱 ${victim.name} が場外へドボン！`, '#38bdf8');
+      }
+
+      // 上空からステージへリスポーン復帰
+      const ang = Math.random() * Math.PI * 2;
+      const rad = Math.random() * 6;
+      victim.x = Math.cos(ang) * rad;
+      victim.z = Math.sin(ang) * rad;
+      victim.y = 12;
+      victim.vx = 0; victim.vy = 0; victim.vz = 0;
+      victim.lastHitBy = null;
+      updateRankingUI();
+    }
+
+    function showFloatingText(x, y, z, text, color = '#fff') {
+      const container = document.getElementById('three-container');
+      const layer = document.getElementById('floating-layer');
+      if (!container || !layer || !camera) return;
+
+      const vec = new THREE.Vector3(x, y, z);
+      vec.project(camera);
+      const sx = (vec.x * 0.5 + 0.5) * container.clientWidth;
+      const sy = (-(vec.y * 0.5) + 0.5) * container.clientHeight;
+
+      const el = document.createElement('div');
+      el.className = 'floating-score text-sm md:text-base';
+      el.style.left = `${sx}px`;
+      el.style.top = `${sy}px`;
+      el.style.color = color;
+      el.textContent = text;
+      layer.appendChild(el);
+      setTimeout(() => el.remove(), 1100);
+    }
+
+    function spawnDanmaku(text, color = '#ffffff') {
+      const layer = document.getElementById('danmaku-layer');
+      if (!layer) return;
+      const item = document.createElement('div');
+      item.className = 'danmaku-item text-lg md:text-2xl';
+      item.style.top = `${12 + Math.random() * 60}%`;
+      item.style.color = color;
+      item.textContent = text;
+      layer.appendChild(item);
+      setTimeout(() => item.remove(), 6500);
+    }
+
+    function updateRankingUI() {
+      const list = Object.values(players).sort((a, b) => b.score - a.score);
+      document.getElementById('player-count').textContent = `${list.length}人`;
+      const board = document.getElementById('leaderboard');
+      board.innerHTML = list.map((p, i) => `
+        <div class="flex items-center justify-between px-2.5 py-1.5 rounded-xl ${i === 0 ? 'bg-yellow-400/25 border border-yellow-300/50' : 'bg-black/40'}">
+          <div class="flex items-center gap-1.5 truncate">
+            <span class="font-arcade font-black w-4 text-yellow-300">${i + 1}</span>
+            <span>${crownState.holderId === p.id ? '👑' : p.face}</span>
+            <span class="font-black truncate text-white">${p.name}</span>
+          </div>
+          <span class="font-arcade font-black text-yellow-300 ml-2">${p.score}</span>
+        </div>
+      `).join('');
+    }
+
+    function resetMatch() {
+      crownState.holderId = null;
+      crownState.x = 0; crownState.z = 0;
+      Object.values(players).forEach(p => {
+        p.score = 0;
+        p.x = (Math.random() - 0.5) * 10;
+        p.z = (Math.random() - 0.5) * 10;
+        p.y = 8;
+        p.vx = 0; p.vy = 0; p.vz = 0;
+      });
+      updateRankingUI();
+      spawnDanmaku('🔄 スコア＆王冠をリセットして新ラウンド開始！', '#00f5d4');
+    }
+
+    // ============================================================================
+    // 7. ネットワーク同期（MQTT over WSS でスマホ4G/5Gでも100%同期）
+    // ============================================================================
+    function initNetworkSync() {
+      document.getElementById('room-code-text').textContent = roomCode;
+      document.getElementById('manual-room-input').value = roomCode;
+
+      // QRコード生成
+      const joinUrl = `${window.location.origin}${window.location.pathname}?room=${roomCode}`;
+      const qrBox = document.getElementById('qrcode-box');
+      qrBox.innerHTML = '';
+      new QRCode(qrBox, { text: joinUrl, width: 112, height: 112 });
+
+      mqttTopicHost = `ccc-wacha-2026/${roomCode}/host`;
+      mqttTopicState = `ccc-wacha-2026/${roomCode}/state`;
+
+      mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
+      mqttClient.on('connect', () => {
+        document.getElementById('conn-badge').textContent = `ONLINE (ROOM: ${roomCode})`;
+        document.getElementById('ctrl-sync-text').textContent = `🟢 ROOM [${roomCode}] に同期中！`;
+        mqttClient.subscribe(mqttTopicHost);
+        mqttClient.subscribe(mqttTopicState);
+
+        // 接続完了時にすぐ自分のキャラクターを登録送信
+        sendControllerInput({ type: 'join' });
+      });
+
+      mqttClient.on('message', (topic, payload) => {
+        try {
+          const data = JSON.parse(payload.toString());
+          if (topic === mqttTopicHost) {
+            handleHostPacket(data);
+          } else if (topic === mqttTopicState && data.scores && data.scores[myClientId] !== undefined) {
+            document.getElementById('ctrl-score-num').textContent = data.scores[myClientId];
+          }
+        } catch (e) {}
+      });
+    }
+
+    function connectToManualRoom() {
+      const val = document.getElementById('manual-room-input').value.trim().toUpperCase();
+      if (!val) return;
+      if (mqttClient) {
+        mqttClient.unsubscribe(mqttTopicHost);
+        mqttClient.unsubscribe(mqttTopicState);
+      }
+      roomCode = val;
+      document.getElementById('room-code-text').textContent = roomCode;
+      mqttTopicHost = `ccc-wacha-2026/${roomCode}/host`;
+      mqttTopicState = `ccc-wacha-2026/${roomCode}/state`;
+      if (mqttClient && mqttClient.connected) {
+        mqttClient.subscribe(mqttTopicHost);
+        mqttClient.subscribe(mqttTopicState);
+        sendControllerInput({ type: 'join' });
+        document.getElementById('ctrl-sync-text').textContent = `🟢 ROOM [${roomCode}] に接続完了！`;
+      }
+    }
+
+    function sendControllerInput(extra = {}) {
+      const name = document.getElementById('ctrl-name-input').value || 'PLAYER';
+      const packet = {
+        id: myClientId,
+        name,
+        jx: Number(joyVec.x.toFixed(2)),
+        jy: Number(joyVec.y.toFixed(2)),
+        ...extra
+      };
+      // 同一画面テスト用またはホスト自身の操作は即時反映
+      handleHostPacket(packet);
+
+      if (mqttClient && mqttClient.connected) {
+        mqttClient.publish(mqttTopicHost, JSON.stringify(packet));
+      }
+    }
+
+    function handleHostPacket(data) {
+      if (!data || !data.id) return;
+      packetsCount++;
+      packetVisuals.push({ prog: 0, color: '#00f5d4' });
+
+      const p = ensurePlayer(data.id, data.name, false);
+      if (typeof data.jx === 'number') p.joyX = data.jx;
+      if (typeof data.jy === 'number') p.joyY = data.jy;
+
+      if (data.action === 'jump') doJump(p);
+      if (data.action === 'dive') doDive(p);
+      if (data.action === 'spin') doSpinAttack(p);
+      if (data.reaction) {
+        spawnDanmaku(`${p.face} ${p.name}: ${data.reaction}`, p.color);
+        showFloatingText(p.x, p.y + 3.2, p.z, data.reaction, '#ffffff');
+      }
+
+      if (Math.random() < 0.25) {
+        const logBox = document.getElementById('packet-log');
+        if (logBox) {
+          const line = document.createElement('div');
+          line.textContent = `[P2P] ${p.name} (${data.jx},${data.jy}) ${data.action || ''}`;
+          logBox.prepend(line);
+          while (logBox.children.length > 5) logBox.lastChild.remove();
         }
+      }
+    }
 
-        function triggerControllerAction(actionName) {
-            sendNetworkPacket({ type: 'ACTION', action: actionName });
+    function sendProfileUpdate() { sendControllerInput({ type: 'profile' }); }
+    function sendReaction(msg) { sendControllerInput({ reaction: msg }); }
+
+    // ============================================================================
+    // 8. スマホコントローラー（ジョイスティック＆ボタン＆キーボード対応）
+    // ============================================================================
+    let joyVec = { x: 0, y: 0 };
+
+    function initControllerPad() {
+      const zone = document.getElementById('joy-zone');
+      const knob = document.getElementById('joy-knob');
+      let dragging = false;
+
+      function updateKnob(clientX, clientY) {
+        const rect = zone.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const maxR = rect.width / 2 - 24;
+        let dx = clientX - cx;
+        let dy = clientY - cy;
+        const d = Math.hypot(dx, dy);
+        if (d > maxR) {
+          dx = (dx / d) * maxR;
+          dy = (dy / d) * maxR;
         }
+        knob.style.transform = `translate(${dx}px, ${dy}px)`;
+        joyVec.x = dx / maxR;
+        joyVec.y = dy / maxR;
+      }
 
-        function updateControllerProfile() {
-            const val = document.getElementById('ctrlPlayerName').value.trim() || 'Player';
-            controllerProfile.name = val;
-            sendNetworkPacket({ type: 'MOVE', x: 0, y: 0 });
+      function resetKnob() {
+        dragging = false;
+        knob.style.transform = 'translate(0px, 0px)';
+        joyVec.x = 0; joyVec.y = 0;
+        sendControllerInput();
+      }
+
+      zone.addEventListener('pointerdown', e => {
+        dragging = true;
+        zone.setPointerCapture(e.pointerId);
+        updateKnob(e.clientX, e.clientY);
+        sendControllerInput();
+      });
+      zone.addEventListener('pointermove', e => {
+        if (!dragging) return;
+        updateKnob(e.clientX, e.clientY);
+      });
+      zone.addEventListener('pointerup', resetKnob);
+      zone.addEventListener('pointercancel', resetKnob);
+
+      // 3大アクションボタン
+      document.getElementById('btn-jump').addEventListener('pointerdown', e => {
+        e.preventDefault();
+        sendControllerInput({ action: 'jump' });
+      });
+      document.getElementById('btn-dive').addEventListener('pointerdown', e => {
+        e.preventDefault();
+        sendControllerInput({ action: 'dive' });
+      });
+      document.getElementById('btn-spin').addEventListener('pointerdown', e => {
+        e.preventDefault();
+        sendControllerInput({ action: 'spin' });
+      });
+
+      // PCのキーボードでも操作可能 (WASD / 矢印 / Space:ジャンプ / Shift:ダイブ / Enter:回転)
+      const keys = {};
+      window.addEventListener('keydown', e => {
+        if (document.activeElement.tagName === 'INPUT') return;
+        keys[e.code] = true;
+        if (e.code === 'Space') sendControllerInput({ action: 'jump' });
+        if (e.code === 'ShiftLeft' || e.code === 'KeyZ') sendControllerInput({ action: 'dive' });
+        if (e.code === 'Enter' || e.code === 'KeyX') sendControllerInput({ action: 'spin' });
+        syncKeyVec();
+      });
+      window.addEventListener('keyup', e => {
+        keys[e.code] = false;
+        syncKeyVec();
+      });
+
+      function syncKeyVec() {
+        let kx = 0, ky = 0;
+        if (keys['ArrowLeft'] || keys['KeyA']) kx -= 1;
+        if (keys['ArrowRight'] || keys['KeyD']) kx += 1;
+        if (keys['ArrowUp'] || keys['KeyW']) ky -= 1;
+        if (keys['ArrowDown'] || keys['KeyS']) ky += 1;
+        const l = Math.hypot(kx, ky) || 1;
+        joyVec.x = kx ? kx / l : 0;
+        joyVec.y = ky ? ky / l : 0;
+      }
+
+      // 80msごとにスティック入力を送信
+      setInterval(() => {
+        if (Math.abs(joyVec.x) > 0.01 || Math.abs(joyVec.y) > 0.01) {
+          sendControllerInput();
         }
+      }, 80);
+    }
 
-        function selectControllerColor(hex) {
-            controllerProfile.color = hex;
-            const preview = document.getElementById('ctrlAvatarPreview');
-            preview.style.backgroundColor = hex;
-            preview.style.boxShadow = `0 0 10px ${hex}`;
-            sendNetworkPacket({ type: 'MOVE', x: 0, y: 0 });
+    // 通信モニター描画
+    function renderNetworkVisualizer() {
+      const cvs = document.getElementById('net-canvas');
+      if (!cvs) return;
+      const ctx = cvs.getContext('2d');
+      ctx.clearRect(0, 0, cvs.width, cvs.height);
+
+      const cx = cvs.width / 2, cy = cvs.height / 2;
+      const list = Object.values(players);
+      list.forEach((p, idx) => {
+        const ang = (idx / Math.max(1, list.length)) * Math.PI * 2;
+        const nx = cx + Math.cos(ang) * 70;
+        const ny = cy + Math.sin(ang) * 28;
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.beginPath(); ctx.moveTo(nx, ny); ctx.lineTo(cx, cy); ctx.stroke();
+        ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(nx, ny, 4.5, 0, Math.PI * 2); ctx.fill();
+      });
+
+      ctx.fillStyle = '#facc15';
+      ctx.beginPath(); ctx.arc(cx, cy, 7, 0, Math.PI * 2); ctx.fill();
+
+      packetVisuals.forEach(v => v.prog += 0.08);
+      packetVisuals = packetVisuals.filter(v => v.prog < 1);
+    }
+
+    // 画面モード切替
+    function switchViewMode(mode) {
+      currentMode = mode;
+      const hostSec = document.getElementById('host-section');
+      const ctrlSec = document.getElementById('controller-section');
+
+      if (mode === 'host') {
+        hostSec.classList.remove('hidden');
+        ctrlSec.classList.add('hidden');
+      } else if (mode === 'controller') {
+        hostSec.classList.add('hidden');
+        ctrlSec.classList.remove('hidden');
+        ctrlSec.classList.remove('lg:w-[410px]');
+        ctrlSec.classList.add('w-full', 'flex-1');
+      } else {
+        hostSec.classList.remove('hidden');
+        ctrlSec.classList.remove('hidden', 'w-full', 'flex-1');
+        ctrlSec.classList.add('lg:w-[410px]');
+      }
+      setTimeout(() => window.dispatchEvent(new Event('resize')), 60);
+    }
+
+    // ============================================================================
+    // 9. 起動とメインループ
+    // ============================================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      const randNum = Math.floor(10 + Math.random() * 89);
+      document.getElementById('ctrl-name-input').value = `P_${randNum}`;
+
+      initThreeStage();
+      initControllerPad();
+      initNetworkSync();
+
+      // 最初からわちゃわちゃするようにプレイヤー自身とCPUボット4体を追加
+      ensurePlayer(myClientId, document.getElementById('ctrl-name-input').value, false);
+      spawnBot();
+      spawnBot();
+      spawnBot();
+      spawnBot();
+
+      if (roomParam) switchViewMode('controller');
+      else switchViewMode('split');
+
+      // 1秒ごとのタイマー＆スコア配信
+      setInterval(() => {
+        ppsValue = packetsCount;
+        packetsCount = 0;
+        const ppsEl = document.getElementById('pps-label');
+        if (ppsEl) ppsEl.textContent = `${ppsValue} pkt/s`;
+
+        eventCountdown--;
+        if (eventCountdown <= 0) {
+          eventCountdown = 20;
+          triggerArenaEvent();
         }
+        const timerEl = document.getElementById('event-timer');
+        if (timerEl) timerEl.textContent = `00:${String(eventCountdown).padStart(2, '0')}`;
 
-        /******************************************************************
-         * 9. UI HELPERS, LEADERBOARD & MATCH TIMER
-         ******************************************************************/
-        function sendDanmaku(text) {
-            sendNetworkPacket({ type: 'DANMAKU', text });
+        if (mqttClient && mqttClient.connected && currentMode !== 'controller') {
+          const scores = {};
+          Object.values(players).forEach(p => scores[p.id] = p.score);
+          mqttClient.publish(mqttTopicState, JSON.stringify({ scores }));
         }
+      }, 1000);
 
-        function sendCustomDanmaku() {
-            const input = document.getElementById('customDanmakuInput');
-            const text = input.value.trim();
-            if (!text) return;
-            sendDanmaku(`💬 ${controllerProfile.name}: ${text}`);
-            input.value = '';
-        }
-
-        function createDanmakuItem(text, color = '#00f3ff') {
-            const layer = document.getElementById('danmakuLayer');
-            if (!layer) return;
-            const el = document.createElement('div');
-            el.className = 'danmaku-item font-black text-base md:text-2xl';
-            el.style.color = color;
-            el.style.top = `${12 + Math.random() * 68}%`;
-            el.textContent = text;
-            layer.appendChild(el);
-            setTimeout(() => el.remove(), 6200);
-        }
-
-        function updateLeaderboardUI() {
-            const listEl = document.getElementById('leaderboardList');
-            const nodesEl = document.getElementById('activeNodesCount');
-            if (!listEl) return;
-
-            const sorted = Array.from(players.values()).sort((a, b) => b.score - a.score);
-            if (nodesEl) nodesEl.textContent = `${sorted.length} Nodes`;
-
-            listEl.innerHTML = sorted.map((p, idx) => `
-                <div class="flex items-center justify-between bg-slate-950/90 px-2 py-1 rounded border border-slate-800">
-                    <div class="flex items-center gap-1.5 truncate">
-                        <span class="font-mono text-[10px] text-slate-400">${idx === 0 ? '👑' : (idx + 1) + '.'}</span>
-                        <span class="w-2 h-2 rounded-full shrink-0" style="background:${p.colorHex}"></span>
-                        <span class="font-bold text-white truncate">${p.name}</span>
-                    </div>
-                    <span class="font-mono font-bold text-amber-300 ml-1">${p.score}</span>
-                </div>
-            `).join('');
-        }
-
-        function addAiBot() {
-            const idx = players.size + 1;
-            const palette = ['#ff007f', '#00ff66', '#ffb800', '#a855f7', '#38bdf8'];
-            const color = palette[idx % palette.length];
-            const id = 'ai-' + Math.random().toString(36).substring(2, 6);
-            const bot = new Player3D(id, `AI_Bot_${idx}`, color, true);
-            players.set(id, bot);
-            updateLeaderboardUI();
-            playSound('join');
-        }
-
-        function resetScores() {
-            players.forEach(p => { p.score = 0; p.updateLabelHTML(); });
-            updateLeaderboardUI();
-            showToast('全員のスコアをリセットしました');
-        }
-
-        let matchTimerId = null;
-        let matchRemaining = 0;
-
-        function startTimedMatch(seconds = 90) {
-            closeWinnerOverlay();
-            resetScores();
-            outerRingCollapsed = false;
-            matchRemaining = seconds;
-            document.getElementById('eventStatusLabel').textContent = '🔥 3D RANKED BATTLE!';
-            document.getElementById('matchTimerDisplay').textContent = `${matchRemaining}s`;
-            triggerStageEvent('METEOR');
-
-            if (matchTimerId) clearInterval(matchTimerId);
-            matchTimerId = setInterval(() => {
-                matchRemaining--;
-                document.getElementById('matchTimerDisplay').textContent = `${matchRemaining}s`;
-
-                if (matchRemaining === 60) triggerStageEvent('BOSS');
-                if (matchRemaining === 30) triggerStageEvent('SHRINK');
-
-                if (matchRemaining <= 0) {
-                    clearInterval(matchTimerId);
-                    finishMatch();
-                }
-            }, 1000);
-        }
-
-        function finishMatch() {
-            outerRingCollapsed = false;
-            document.getElementById('eventStatusLabel').textContent = 'FREE BATTLE';
-            document.getElementById('matchTimerDisplay').textContent = '∞';
-            const sorted = Array.from(players.values()).sort((a, b) => b.score - a.score);
-            if (sorted[0]) {
-                document.getElementById('winnerName').textContent = sorted[0].name;
-                document.getElementById('winnerName').style.color = sorted[0].colorHex;
-                document.getElementById('winnerScore').textContent = `SCORE: ${sorted[0].score} PTS`;
-                document.getElementById('winnerOverlay').classList.remove('hidden');
-                playSound('join');
-            }
-        }
-
-        function closeWinnerOverlay() {
-            document.getElementById('winnerOverlay').classList.add('hidden');
-        }
-
-        /******************************************************************
-         * 10. VIEW MODE SWITCHING & RESIZE HANDLING
-         ******************************************************************/
-        let currentAppMode = 'split';
-
-        function switchAppMode(mode) {
-            currentAppMode = mode;
-            const hostSec = document.getElementById('hostSection');
-            const ctrlSec = document.getElementById('controllerSection');
-            const bHost = document.getElementById('btnModeHost');
-            const bSplit = document.getElementById('btnModeSplit');
-            const bCtrl = document.getElementById('btnModeController');
-
-            const onCls = 'px-2.5 py-1 rounded-md font-bold transition flex items-center gap-1 bg-cyan-500 text-slate-950 shadow';
-            const offCls = 'px-2.5 py-1 rounded-md font-bold transition flex items-center gap-1 text-slate-300 hover:text-white';
-
-            bHost.className = mode === 'host' ? onCls : offCls;
-            bSplit.className = mode === 'split' ? onCls : offCls;
-            bCtrl.className = mode === 'controller' ? onCls : offCls;
-
-            if (mode === 'host') {
-                hostSec.classList.remove('hidden');
-                ctrlSec.classList.add('hidden');
-            } else if (mode === 'split') {
-                hostSec.classList.remove('hidden');
-                ctrlSec.classList.remove('hidden');
-                ctrlSec.className = 'w-full lg:w-[390px] xl:w-[410px] bg-slate-900 border-t lg:border-t-0 lg:border-l border-cyan-500/40 flex flex-col justify-between p-3 shrink-0 select-none z-30';
-            } else if (mode === 'controller') {
-                hostSec.classList.add('hidden');
-                ctrlSec.classList.remove('hidden');
-                ctrlSec.className = 'w-full max-w-md mx-auto my-auto h-full max-h-[680px] bg-slate-900 neon-border rounded-2xl flex flex-col justify-between p-3 select-none z-30';
-            }
-
-            setTimeout(handleResize, 60);
-        }
-
-        function handleResize() {
-            if (!renderer || !camera) return;
-            const container = document.getElementById('threeCanvasContainer');
-            if (container && container.clientWidth > 0 && container.clientHeight > 0) {
-                camera.aspect = container.clientWidth / container.clientHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(container.clientWidth, container.clientHeight);
-            }
-        }
-        window.addEventListener('resize', handleResize);
-
-        function showToast(msg) {
-            const t = document.getElementById('toastNotice');
-            document.getElementById('toastMessage').textContent = msg;
-            t.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => t.classList.add('translate-y-20', 'opacity-0'), 3000);
-        }
-
-        // Initialize Everything on Load
-        window.onload = function () {
-            initThreeJS();
-
-            // Spawn Local Player & 3 AI Bots for immediate 3D action
-            const localP = new Player3D(controllerProfile.id, controllerProfile.name, controllerProfile.color, false);
-            players.set(controllerProfile.id, localP);
-            addAiBot();
-            addAiBot();
-            addAiBot();
-
-            initHybridNetwork();
-
-            if (initialRoomParam) {
-                // Opened on Smartphone via QR Code!
-                document.getElementById('ctrlPlayerName').value = controllerProfile.name;
-                switchAppMode('controller');
-            } else {
-                switchAppMode('split');
-            }
-
-            updateLeaderboardUI();
-            animate3D();
-        };
-    </script>
+      function animate() {
+        requestAnimationFrame(animate);
+        updateGamePhysics();
+        renderNetworkVisualizer();
+        if (renderer && scene && camera) renderer.render(scene, camera);
+      }
+      animate();
+    });
+  </script>
 </body>
 </html>
