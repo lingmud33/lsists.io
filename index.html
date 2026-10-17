@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>WACHA-WACHA 3D KNOCKOUT! - 学園祭パーティバトル</title>
+  <title>WACHA-WACHA 3D KNOCKOUT! - Computer Communication Circle</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <!-- Blenderの .glb / .gltf モデルを読み込むための公式ローダー -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
@@ -41,19 +40,22 @@
       <h1 class="font-black text-base md:text-xl tracking-wider text-white drop-shadow-[0_3px_0_#000]">
         🎪 WACHA-WACHA <span class="text-yellow-300">KNOCKOUT!</span>
       </h1>
+      <span class="hidden sm:inline-block text-[11px] bg-indigo-950/80 text-pink-300 border border-pink-400/40 px-2.5 py-0.5 rounded-full font-black">
+        Computer Communication Circle
+      </span>
       <span id="conn-badge" class="text-[11px] bg-black/50 text-emerald-300 border border-emerald-400/50 px-2.5 py-0.5 rounded-full font-bold">SYNC READY</span>
     </div>
 
     <div class="flex items-center gap-1.5 md:gap-2">
-      <!-- Blender (.glb) テスト読み込みボタン -->
-      <label id="glb-upload-label" class="arcade-btn cursor-pointer text-xs px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black flex items-center gap-1">
-        📁 3Dモデル(.glb)読込
+      <!-- ご指定の .glb 読み込みボタン（維持） -->
+      <label id="glb-upload-label" class="arcade-btn cursor-pointer text-xs px-2.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black flex items-center gap-1">
+        📁 .glb読込
         <input type="file" id="glb-file-input" accept=".glb,.gltf" class="hidden" onchange="handleLocalGLBUpload(event)" />
       </label>
-      <button onclick="switchViewMode('split')" id="btn-mode-split" class="arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-pink-500 text-white font-black">分割テスト</button>
-      <button onclick="switchViewMode('host')" id="btn-mode-host" class="arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-indigo-800 text-indigo-100 font-bold hover:bg-indigo-700">展示大画面</button>
+      <button onclick="switchViewMode('host')" id="btn-mode-host" class="arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-pink-500 text-white font-black">展示大画面</button>
+      <button onclick="switchViewMode('split')" id="btn-mode-split" class="arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-indigo-800 text-indigo-100 font-bold hover:bg-indigo-700">分割テスト</button>
       <button onclick="switchViewMode('controller')" id="btn-mode-ctrl" class="arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-indigo-800 text-indigo-100 font-bold hover:bg-indigo-700">スマホ画面</button>
-      <button onclick="toggleAudio()" id="btn-audio" class="arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-black">🔊 効果音ON</button>
+      <button onclick="toggleAudio()" id="btn-audio" class="arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-black">🔊 音ON</button>
     </div>
   </header>
 
@@ -63,59 +65,79 @@
     <!-- ================= 展示用3D大画面 (HOST) ================= -->
     <div id="host-section" class="flex-1 relative flex overflow-hidden bg-indigo-950">
 
-      <!-- 左サイドパネル: 参加QR ＆ 通信モニター -->
-      <aside class="w-72 pop-panel m-2.5 z-20 flex flex-col justify-between p-3.5 shrink-0 hidden xl:flex">
+      <!-- 左サイドパネル: 来場者参加QR ＆ 通信モニター ＆ CPU増減 -->
+      <aside class="w-72 pop-panel m-2.5 z-20 flex flex-col justify-between p-3.5 shrink-0 hidden md:flex">
         <div class="space-y-3">
           <!-- QR & ルームコード -->
-          <div class="bg-indigo-950/90 border-2 border-pink-400/50 rounded-2xl p-3 text-center shadow-inner">
+          <div class="bg-indigo-950/90 border-2 border-pink-400/60 rounded-2xl p-3 text-center shadow-inner">
             <div class="flex items-center justify-between mb-1">
-              <span class="text-[11px] font-black text-pink-300 tracking-wider">📱 スマホで飛び入り参加！</span>
-              <span class="text-[10px] bg-pink-500 text-white px-2 py-0.5 rounded-full font-black animate-pulse">最大20人</span>
+              <span class="text-xs font-black text-yellow-300 tracking-wider">📱 スマホで飛び入り参加！</span>
+              <span class="text-[10px] bg-pink-500 text-white px-2 py-0.5 rounded-full font-black animate-pulse">参加無料</span>
             </div>
-            <div id="qrcode-box" class="bg-white p-2 rounded-xl inline-block my-1 shadow-md"></div>
-            <div class="mt-1 bg-black/60 rounded-xl py-1.5 px-2 border border-white/15">
-              <div class="text-[10px] text-indigo-200 font-bold">ROOMナンバー</div>
-              <div id="room-code-text" class="font-arcade text-2xl font-black text-yellow-300 tracking-widest drop-shadow">----</div>
+            <p class="text-[11px] text-indigo-200 font-bold mb-1">カメラでQRコードを読み取るだけ！</p>
+            <div id="qrcode-box" class="bg-white p-2 rounded-xl inline-block my-0.5 shadow-md"></div>
+            <div class="mt-1 bg-black/60 rounded-xl py-1 px-2 border border-white/15 flex items-center justify-between">
+              <span class="text-[10px] text-indigo-200 font-bold">ROOM番号</span>
+              <span id="room-code-text" class="font-arcade text-xl font-black text-yellow-300 tracking-widest">----</span>
             </div>
           </div>
 
-          <!-- 3Dモデルステータス -->
-          <div class="bg-indigo-900/60 border border-indigo-400/30 rounded-xl p-2.5 text-xs">
-            <div class="flex items-center justify-between font-black text-amber-300 mb-1">
-              <span>🎨 キャラクターモデル</span>
-              <span id="model-status-badge" class="text-[10px] bg-amber-400/20 border border-amber-400/40 px-1.5 py-0.5 rounded text-amber-200">標準ぷにキャラ</span>
+          <!-- 来場者向けルールガイド（開発者向け説明から差し替え） -->
+          <div class="bg-indigo-900/60 border border-indigo-400/30 rounded-xl p-2.5 text-xs space-y-1">
+            <div class="font-black text-yellow-300 flex items-center justify-between">
+              <span>🎮 操作＆ルール</span>
+              <span class="text-[10px] bg-yellow-400/20 text-yellow-200 px-1.5 py-0.5 rounded">わちゃわちゃ乱闘</span>
             </div>
-            <p class="text-[11px] text-indigo-200 leading-tight">
-              同じフォルダに <code class="bg-black/50 px-1 rounded text-pink-300">character.glb</code> を置くか上のボタンから読み込むとBlenderモデルに全員変身します！
-            </p>
+            <div class="text-[11px] text-indigo-100 leading-snug space-y-0.5">
+              <div>🕹️ <b>スティック</b>：移動＆押し合い</div>
+              <div>💥 <b>Aボタン</b>：回転アタックで吹き飛ばす</div>
+              <div>🚀 <b>Bボタン</b>：飛び込みダイブで突撃</div>
+              <div>👑 <b>王冠</b>を拾うと巨大化＆スコア大量！</div>
+            </div>
           </div>
 
           <!-- 通信パケットモニター -->
           <div class="bg-black/50 border border-indigo-500/30 rounded-xl p-2.5">
             <div class="flex items-center justify-between mb-1">
-              <span class="text-[11px] font-black text-cyan-300">📡 リアルタイム通信モニター</span>
+              <span class="text-[11px] font-black text-cyan-300">📡 P2P 通信モニター</span>
               <span id="pps-label" class="font-arcade text-[11px] text-emerald-400">0 pkt/s</span>
             </div>
-            <canvas id="net-canvas" width="230" height="80" class="w-full bg-indigo-950/90 rounded-lg border border-indigo-800"></canvas>
-            <div id="packet-log" class="mt-1.5 h-16 overflow-hidden text-[10px] font-mono text-cyan-200/80 space-y-0.5 leading-tight">
-              <div>[SYS] Wacha-Wacha 3D Engine Ready!</div>
+            <canvas id="net-canvas" width="230" height="68" class="w-full bg-indigo-950/90 rounded-lg border border-indigo-800"></canvas>
+            <div id="packet-log" class="mt-1 h-12 overflow-hidden text-[10px] font-mono text-cyan-200/80 space-y-0.5 leading-tight">
+              <div>[READY] Waiting for players...</div>
             </div>
           </div>
         </div>
 
-        <!-- 下部コントロール -->
-        <div class="space-y-1.5 pt-2 border-t border-white/15">
+        <!-- 下部：AI CPUの増減コントロール ＆ ステージ操作 -->
+        <div class="space-y-2 pt-2 border-t border-white/15">
+          <!-- CPU増減パネル -->
+          <div class="bg-indigo-950/90 border border-cyan-400/40 rounded-xl p-2">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-xs font-black text-cyan-300">🤖 AI CPU人数調整</span>
+              <span id="bot-count-badge" class="font-arcade text-xs font-black bg-cyan-500/20 text-cyan-200 border border-cyan-400/40 px-2 py-0.5 rounded-full">4体</span>
+            </div>
+            <div class="grid grid-cols-3 gap-1.5">
+              <button onclick="removeBot()" class="arcade-btn bg-rose-500 hover:bg-rose-400 text-white font-black py-1.5 rounded-lg text-xs">
+                ➖ 減らす
+              </button>
+              <button onclick="spawnBot()" class="arcade-btn bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-black py-1.5 rounded-lg text-xs">
+                ➕ 増やす
+              </button>
+              <button onclick="clearBots()" class="arcade-btn bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold py-1.5 rounded-lg text-[11px]">
+                0体にする
+              </button>
+            </div>
+          </div>
+
           <div class="grid grid-cols-2 gap-1.5">
-            <button onclick="spawnBot()" class="arcade-btn bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-black py-2 rounded-xl text-xs">
-              🤖 CPUキャラ追加
+            <button onclick="triggerArenaEvent()" class="arcade-btn bg-pink-500 hover:bg-pink-400 text-white font-black py-1.5 rounded-xl text-xs">
+              ⚡ ギミック発動
             </button>
-            <button onclick="triggerArenaEvent()" class="arcade-btn bg-pink-500 hover:bg-pink-400 text-white font-black py-2 rounded-xl text-xs">
-              ⚡ ギミック発動！
+            <button onclick="resetMatch()" class="arcade-btn bg-indigo-800 hover:bg-indigo-700 text-indigo-100 font-bold py-1.5 rounded-xl text-xs">
+              🔄 リセット
             </button>
           </div>
-          <button onclick="resetMatch()" class="arcade-btn w-full bg-indigo-800 hover:bg-indigo-700 text-indigo-200 font-bold py-1.5 rounded-xl text-xs">
-            🔄 スコア＆王冠リセット
-          </button>
         </div>
       </aside>
 
@@ -128,12 +150,12 @@
         <div class="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center pointer-events-none w-full max-w-xl px-4">
           <div class="pop-panel px-6 py-2 flex items-center gap-5 border-2 border-yellow-400/60">
             <div class="text-center">
-              <div class="text-[10px] text-pink-300 font-black">ギミック発動まで</div>
+              <div class="text-[10px] text-pink-300 font-black">NEXT GIMMICK</div>
               <div id="event-timer" class="font-arcade text-2xl font-black text-yellow-300">00:20</div>
             </div>
             <div class="h-8 w-0.5 bg-white/20"></div>
             <div class="text-left">
-              <div class="text-[10px] text-cyan-300 font-black">現在のステージ状況</div>
+              <div class="text-[10px] text-cyan-300 font-black">STAGE MISSION</div>
               <div id="stage-status" class="text-sm md:text-base font-black text-white">👑 中央の「王冠」を奪い合え！</div>
             </div>
           </div>
@@ -147,18 +169,10 @@
         <!-- 画面右上：わちゃわちゃランキング -->
         <div class="absolute top-3 right-3 w-60 pop-panel p-3 z-30 pointer-events-none">
           <div class="flex items-center justify-between border-b-2 border-white/15 pb-1.5 mb-2">
-            <span class="text-xs font-black text-yellow-300">🏆 わちゃわちゃランキング</span>
+            <span class="text-xs font-black text-yellow-300">🏆 スコアランキング</span>
             <span id="player-count" class="text-[11px] bg-pink-500 text-white px-2 py-0.5 rounded-full font-black">0人</span>
           </div>
-          <div id="leaderboard" class="space-y-1.5 text-xs max-h-60 overflow-y-auto"></div>
-        </div>
-
-        <!-- 画面下部：操作ガイド -->
-        <div class="absolute bottom-3 left-3 right-3 flex justify-between items-end pointer-events-none z-20">
-          <div class="pop-panel px-4 py-2 text-xs text-indigo-100 hidden sm:block">
-            <span class="text-yellow-300 font-black">🎮 遊び方：</span>
-            手足をバタバタさせて押し合い！ <span class="text-cyan-300 font-black">【B: 飛び込みダイブ】</span>で集団を弾き飛ばし、<span class="text-pink-400 font-black">【A: 回転アタック】</span>で場外へ落とそう！👑王冠を持つと巨大化！
-          </div>
+          <div id="leaderboard" class="space-y-1.5 text-xs max-h-64 overflow-y-auto"></div>
         </div>
       </main>
     </div>
@@ -172,9 +186,9 @@
           <div class="flex items-center gap-2.5">
             <div id="ctrl-color-icon" class="w-9 h-9 rounded-2xl bg-pink-500 border-2 border-white shadow-md flex items-center justify-center font-black text-lg">😆</div>
             <div>
-              <input id="ctrl-name-input" type="text" maxlength="8" value="P1_タロウ" onchange="sendProfileUpdate()"
+              <input id="ctrl-name-input" type="text" maxlength="8" value="PLAYER" onchange="sendProfileUpdate()"
                 class="bg-transparent font-black text-base text-white focus:outline-none border-b-2 border-dashed border-pink-300 w-28" />
-              <div id="ctrl-sync-text" class="text-[10px] text-emerald-300 font-bold">🟢 同期バッチリ！</div>
+              <div id="ctrl-sync-text" class="text-[10px] text-emerald-300 font-bold">🟢 接続OK！</div>
             </div>
           </div>
           <div class="text-right bg-black/40 px-3 py-1 rounded-xl border border-yellow-400/40">
@@ -189,12 +203,12 @@
           <input id="manual-room-input" type="text" maxlength="6" placeholder="4桁コード"
             class="bg-indigo-950 text-yellow-300 font-arcade font-bold px-2 py-1 rounded-lg border border-indigo-600 w-24 text-center uppercase" />
           <button onclick="connectToManualRoom()" class="arcade-btn bg-pink-500 hover:bg-pink-400 text-white font-black px-3 py-1 rounded-lg text-xs ml-auto">
-            接続する
+            同期する
           </button>
         </div>
       </div>
 
-      <!-- 中央：3D風ぷにぷにスティック ＆ 3大アクションボタン -->
+      <!-- 中央：アナログスティック ＆ 3大アクションボタン -->
       <div class="flex-1 flex items-center justify-around py-2 gap-2 relative">
         <!-- 左：バーチャルアナログスティック -->
         <div class="flex flex-col items-center">
@@ -204,12 +218,11 @@
               MOVE
             </div>
           </div>
-          <span class="text-[11px] text-indigo-200 mt-1.5 font-black">🕹️ ぐりぐり移動 (WASD/矢印)</span>
+          <span class="text-[11px] text-indigo-200 mt-1.5 font-black">🕹️ スライドして移動</span>
         </div>
 
         <!-- 右：ゲーセン風でかボタン3つ -->
         <div class="flex flex-col gap-2.5 items-center">
-          <!-- Yボタン：ジャンプ -->
           <button id="btn-jump"
             class="arcade-btn w-24 h-12 rounded-2xl bg-gradient-to-b from-emerald-400 to-emerald-600 border-2 border-white flex items-center justify-center gap-1 shadow-lg">
             <span class="font-arcade font-black text-base text-slate-950">Y</span>
@@ -217,14 +230,12 @@
           </button>
 
           <div class="flex gap-2.5">
-            <!-- Bボタン：飛び込みダイブ -->
             <button id="btn-dive"
               class="arcade-btn w-20 h-20 rounded-full bg-gradient-to-b from-cyan-300 to-blue-600 border-4 border-white flex flex-col items-center justify-center shadow-lg">
               <span class="font-arcade font-black text-xl text-white leading-none">B</span>
               <span class="text-[10px] font-black text-white mt-0.5">飛び込み!</span>
             </button>
 
-            <!-- Aボタン：回転ぶっとばし -->
             <button id="btn-spin"
               class="arcade-btn w-24 h-24 rounded-full bg-gradient-to-b from-pink-400 to-rose-600 border-4 border-white flex flex-col items-center justify-center shadow-lg">
               <span class="font-arcade font-black text-2xl text-white leading-none">A</span>
@@ -235,9 +246,9 @@
         </div>
       </div>
 
-      <!-- 下部：スタンプ弾幕（頭上に吹き出しも出る！） -->
+      <!-- 下部：スタンプ弾幕 -->
       <div class="space-y-1.5 bg-indigo-900/70 p-2.5 rounded-2xl border border-white/15">
-        <div class="text-[11px] font-black text-yellow-300">💬 わちゃわちゃリアクション（大画面＆キャラ頭上に表示）</div>
+        <div class="text-[11px] font-black text-yellow-300">💬 大画面へスタンプ弾幕を送る</div>
         <div class="grid grid-cols-4 gap-1.5">
           <button onclick="sendReaction('🔥 どけーっ！')" class="arcade-btn bg-indigo-800 hover:bg-indigo-700 py-1.5 rounded-xl text-xs font-black">🔥どけー!</button>
           <button onclick="sendReaction('👑 王冠よこせ！')" class="arcade-btn bg-indigo-800 hover:bg-indigo-700 py-1.5 rounded-xl text-xs font-black">👑よこせ!</button>
@@ -265,7 +276,7 @@
       soundEnabled = !soundEnabled;
       initAudio();
       const btn = document.getElementById('btn-audio');
-      btn.textContent = soundEnabled ? '🔊 効果音ON' : '🔇 ミュート';
+      btn.textContent = soundEnabled ? '🔊 音ON' : '🔇 ミュート';
       btn.className = soundEnabled
         ? 'arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-black'
         : 'arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-slate-700 text-slate-300 font-bold';
@@ -282,12 +293,11 @@
         gain.connect(audioCtx.destination);
 
         if (type === 'boing') {
-          // ぷにっとぶつかる音
           osc.type = 'sine';
           osc.frequency.setValueAtTime(220, now);
           osc.frequency.exponentialRampToValueAtTime(520, now + 0.08);
           osc.frequency.exponentialRampToValueAtTime(180, now + 0.18);
-          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.setValueAtTime(0.18, now);
           gain.gain.linearRampToValueAtTime(0.01, now + 0.18);
           osc.start(now); osc.stop(now + 0.18);
         } else if (type === 'jump') {
@@ -333,11 +343,11 @@
     }
 
     // ============================================================================
-    // 2. ハイブリッド通信 (MQTT over WSS + PeerJS)
+    // 2. ネットワーク変数
     // ============================================================================
     const urlParams = new URLSearchParams(window.location.search);
     const roomParam = urlParams.get('room');
-    let currentMode = roomParam ? 'controller' : 'split';
+    let currentMode = roomParam ? 'controller' : 'host';
     let roomCode = (roomParam || Math.random().toString(36).substring(2, 6)).toUpperCase();
     let myClientId = 'p_' + Math.random().toString(36).substring(2, 9);
 
@@ -352,12 +362,12 @@
     const POP_FACES = ['😆', '😎', '🤩', '😈', '🥳', '🤖', '🐱', '🦊'];
 
     // ============================================================================
-    // 3. Three.js フル3D「わちゃわちゃステージ」＆ Blender (.glb) ローダー
+    // 3. Three.js フル3Dステージ ＆ Blender (.glb) ローダー
     // ============================================================================
     let scene, camera, renderer, gltfLoader;
     let stageRadius = 25;
     let platformGroup, sweeperBarGroup, crownMesh;
-    let customBlenderModelTemplate = null; // 読み込まれた .glb の原本
+    let customBlenderModelTemplate = null;
 
     const players = {};
     const candies = [];
@@ -384,7 +394,6 @@
       renderer.shadowMap.enabled = true;
       container.appendChild(renderer.domElement);
 
-      // 明るいポップなライティング
       const hemiLight = new THREE.HemisphereLight(0xffffff, 0x4c1d95, 0.95);
       scene.add(hemiLight);
 
@@ -393,26 +402,21 @@
       dirLight.castShadow = true;
       scene.add(dirLight);
 
-      // カラフルなドーナツ型・円形ステージを作成
       platformGroup = new THREE.Group();
       scene.add(platformGroup);
       buildPopArenaStage();
 
-      // ステージ中央の「黄金の王冠👑」
       crownMesh = createCrownMesh();
       scene.add(crownMesh);
 
-      // ゲーセン風「回転ハンマーバー（スイーパー）」
       sweeperBarGroup = createSweeperBar();
       sweeperBarGroup.visible = false;
       scene.add(sweeperBarGroup);
 
-      // キャンディ（得点アイテム）を配置
       for (let i = 0; i < 14; i++) {
         spawnCandy();
       }
 
-      // Blender (.glb) ローダー初期化 & 自動で character.glb を探す
       if (THREE.GLTFLoader) {
         gltfLoader = new THREE.GLTFLoader();
         tryAutoLoadCharacterGLB();
@@ -426,11 +430,9 @@
       });
     }
 
-    // ポップなカラフル円形ステージ
     function buildPopArenaStage() {
       while (platformGroup.children.length) platformGroup.remove(platformGroup.children[0]);
 
-      // メインの床
       const cylGeo = new THREE.CylinderGeometry(stageRadius, stageRadius * 0.92, 3, 48);
       const cylMat = new THREE.MeshStandardMaterial({ color: 0x3b0764, roughness: 0.4, metalness: 0.1 });
       const floor = new THREE.Mesh(cylGeo, cylMat);
@@ -438,7 +440,6 @@
       floor.receiveShadow = true;
       platformGroup.add(floor);
 
-      // カラフルなリング模様（Fall Guys風）
       const ringColors = [0xf43f5e, 0xfacc15, 0x06b6d4, 0xa855f7];
       ringColors.forEach((col, idx) => {
         const rInner = idx * 6;
@@ -453,14 +454,12 @@
         }
       });
 
-      // 外周のバンパーエッジ（黄色とピンクのネオン枠）
       const edgeGeo = new THREE.TorusGeometry(stageRadius, 0.45, 16, 64);
       edgeGeo.rotateX(Math.PI / 2);
       const edgeMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
       const edge = new THREE.Mesh(edgeGeo, edgeMat);
       platformGroup.add(edge);
 
-      // ステージ周囲に浮かぶ風船・ブロック装飾
       for (let i = 0; i < 12; i++) {
         const ang = (i / 12) * Math.PI * 2;
         const decoGeo = new THREE.OctahedronGeometry(1.5, 0);
@@ -471,7 +470,6 @@
       }
     }
 
-    // 👑 黄金の王冠メッシュ
     function createCrownMesh() {
       const group = new THREE.Group();
       const baseGeo = new THREE.CylinderGeometry(1.1, 0.85, 0.9, 8);
@@ -479,7 +477,6 @@
       const base = new THREE.Mesh(baseGeo, goldMat);
       group.add(base);
 
-      // ルビーの飾り
       const gemGeo = new THREE.SphereGeometry(0.32, 8, 8);
       const gemMat = new THREE.MeshBasicMaterial({ color: 0xf43f5e });
       const gem = new THREE.Mesh(gemGeo, gemMat);
@@ -490,17 +487,14 @@
       return group;
     }
 
-    // 回転ハンマーバー（スイーパー）
     function createSweeperBar() {
       const group = new THREE.Group();
-      // 中央の柱
       const postGeo = new THREE.CylinderGeometry(1.6, 1.8, 3.2, 16);
       const postMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.3 });
       const post = new THREE.Mesh(postGeo, postMat);
       post.position.y = 1.6;
       group.add(post);
 
-      // 横に伸びる紅白の回転バー
       const barGeo = new THREE.CylinderGeometry(0.65, 0.65, stageRadius * 1.85, 16);
       barGeo.rotateZ(Math.PI / 2);
       const barMat = new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0xbe123c, emissiveIntensity: 0.3 });
@@ -512,15 +506,13 @@
     }
 
     // ============================================================================
-    // 4. ちっちゃい二頭身キャラクター生成 ＆ Blender (.glb) 切り替え機能
+    // 4. 二頭身キャラクター生成 ＆ Blender (.glb) 切り替え
     // ============================================================================
     function createChibiCharacterMesh(colorHex) {
       const root = new THREE.Group();
 
-      // もしBlenderモデル（.glb）が読み込まれていればそれを複製して使う！
       if (customBlenderModelTemplate) {
         const cloned = customBlenderModelTemplate.clone();
-        // プレイヤーカラーをほんのり反映できるパーツがあれば色付け
         const colorRingGeo = new THREE.RingGeometry(1.1, 1.45, 24);
         colorRingGeo.rotateX(-Math.PI / 2);
         const colorRingMat = new THREE.MeshBasicMaterial({ color: colorHex, side: THREE.DoubleSide });
@@ -532,7 +524,6 @@
         return root;
       }
 
-      // --- 標準の「ぷにぷに二頭身ちびキャラ」 ---
       const bodyGroup = new THREE.Group();
       root.add(bodyGroup);
 
@@ -540,7 +531,6 @@
       const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
       const darkMat = new THREE.MeshBasicMaterial({ color: 0x111827 });
 
-      // ぽっちゃり胴体
       const torsoGeo = new THREE.SphereGeometry(0.95, 18, 16);
       torsoGeo.scale(1, 1.1, 0.9);
       const torso = new THREE.Mesh(torsoGeo, mainMat);
@@ -548,21 +538,18 @@
       torso.castShadow = true;
       bodyGroup.add(torso);
 
-      // 大きな頭（二頭身）
       const headGeo = new THREE.SphereGeometry(0.85, 18, 16);
       const head = new THREE.Mesh(headGeo, mainMat);
       head.position.y = 2.35;
       head.castShadow = true;
       bodyGroup.add(head);
 
-      // 顔の白いバイザー（Fall Guys風のかわいい顔窓）
       const faceGeo = new THREE.SphereGeometry(0.62, 16, 12);
       faceGeo.scale(1.05, 0.75, 0.5);
       const face = new THREE.Mesh(faceGeo, whiteMat);
       face.position.set(0, 2.38, 0.52);
       bodyGroup.add(face);
 
-      // くりくりな目（左右）
       const eyeGeo = new THREE.SphereGeometry(0.13, 8, 8);
       eyeGeo.scale(1, 1.4, 0.6);
       const eyeL = new THREE.Mesh(eyeGeo, darkMat);
@@ -571,7 +558,6 @@
       eyeR.position.set(0.22, 2.42, 0.75);
       bodyGroup.add(eyeL, eyeR);
 
-      // パタパタ動く手（左右）
       const armGeo = new THREE.SphereGeometry(0.32, 10, 10);
       armGeo.scale(0.8, 1.6, 0.8);
       const armL = new THREE.Mesh(armGeo, mainMat);
@@ -580,7 +566,6 @@
       armR.position.set(1.05, 1.35, 0);
       bodyGroup.add(armL, armR);
 
-      // トコトコ動く足（左右）
       const legGeo = new THREE.SphereGeometry(0.35, 10, 10);
       legGeo.scale(0.9, 1.3, 1.2);
       const legL = new THREE.Mesh(legGeo, whiteMat);
@@ -589,7 +574,6 @@
       legR.position.set(0.42, 0.35, 0);
       bodyGroup.add(legL, legR);
 
-      // 足元のプレイヤーカラーリング
       const ringGeo = new THREE.RingGeometry(1.1, 1.35, 24);
       ringGeo.rotateX(-Math.PI / 2);
       const ringMat = new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.75, side: THREE.DoubleSide });
@@ -601,21 +585,15 @@
       return root;
     }
 
-    // 同じフォルダに character.glb があれば自動で読み込む
     function tryAutoLoadCharacterGLB() {
       gltfLoader.load(
         './character.glb',
-        (gltf) => {
-          applyLoadedGLBModel(gltf.scene, 'character.glb');
-        },
+        (gltf) => applyLoadedGLBModel(gltf.scene, 'character.glb'),
         undefined,
-        () => {
-          // character.glb がまだ置かれていない場合は標準ぷにキャラのまま動くのでエラー無視
-        }
+        () => {}
       );
     }
 
-    // 画面上のボタンからローカルの .glb ファイルを読み込んで即座に全員変身させる
     function handleLocalGLBUpload(event) {
       const file = event.target.files[0];
       if (!file || !gltfLoader) return;
@@ -629,7 +607,6 @@
     }
 
     function applyLoadedGLBModel(gltfScene, fileName) {
-      // サイズを自動調整して約3ユニットの高さに揃える
       const box = new THREE.Box3().setFromObject(gltfScene);
       const size = new THREE.Vector3();
       box.getSize(size);
@@ -637,29 +614,21 @@
       const scale = 2.8 / maxDim;
       gltfScene.scale.set(scale, scale, scale);
 
-      // 底面をY=0に合わせる
       const box2 = new THREE.Box3().setFromObject(gltfScene);
       gltfScene.position.y = -box2.min.y;
 
       customBlenderModelTemplate = gltfScene;
 
-      // すでに参戦している全員の3Dメッシュを新しいBlenderモデルに差し替える
       Object.values(players).forEach(p => {
         scene.remove(p.mesh);
         p.mesh = createChibiCharacterMesh(p.color);
         scene.add(p.mesh);
       });
 
-      const badge = document.getElementById('model-status-badge');
-      if (badge) {
-        badge.textContent = '✨ ' + fileName;
-        badge.className = 'text-[10px] bg-emerald-500 text-slate-950 font-black px-2 py-0.5 rounded';
-      }
-      spawnDanmaku(`🎉 Blenderモデル「${fileName}」を全員に適用しました！`, '#facc15');
+      spawnDanmaku(`🎉 3Dモデル「${fileName}」を適用しました！`, '#facc15');
       playSound('crown');
     }
 
-    // キャンディ（得点アイテム）生成
     function spawnCandy() {
       const colors = [0xff477e, 0x00f5d4, 0xfee440, 0xa855f7];
       const col = colors[Math.floor(Math.random() * colors.length)];
@@ -675,7 +644,7 @@
     }
 
     // ============================================================================
-    // 5. プレイヤー管理 ＆ わちゃわちゃ物理アクション
+    // 5. プレイヤー管理 ＆ AI CPUの増減機能（追加・削除・全消去）
     // ============================================================================
     function ensurePlayer(id, name, isBot = false) {
       if (players[id]) {
@@ -684,7 +653,7 @@
       }
       const idx = Object.keys(players).length;
       const color = POP_COLORS[idx % POP_COLORS.length];
-      const face = POP_FACES[idx % POP_FACES.length];
+      const face = isBot ? '🤖' : POP_FACES[idx % POP_FACES.length];
       const mesh = createChibiCharacterMesh(color);
 
       const ang = Math.random() * Math.PI * 2;
@@ -714,18 +683,62 @@
         lastHitBy: null
       };
       updateRankingUI();
+      updateBotCountUI();
       return players[id];
     }
 
+    // AI CPUを1体増やす
     function spawnBot() {
-      const botNames = ['ぷにロボ', 'モチまる', 'コロ助', 'ピコ太郎', 'ネジくん', 'タマちゃん'];
-      const id = 'bot_' + Math.random().toString(36).substring(2, 6);
-      const name = '🤖' + botNames[Math.floor(Math.random() * botNames.length)];
+      const botNames = ['ぷにロボ', 'モチまる', 'コロ助', 'ピコ太郎', 'ネジくん', 'タマちゃん', 'メカっち', 'ゴロリ'];
+      const id = 'bot_' + Math.random().toString(36).substring(2, 7);
+      const botList = Object.values(players).filter(p => p.isBot);
+      const name = botNames[botList.length % botNames.length] + (botList.length + 1);
       ensurePlayer(id, name, true);
       playSound('jump');
     }
 
-    // Yボタン：ジャンプ
+    // AI CPUを1体減らす
+    function removeBot() {
+      const botIds = Object.keys(players).filter(id => players[id].isBot);
+      if (botIds.length === 0) return;
+      const targetId = botIds[botIds.length - 1];
+      const target = players[targetId];
+      if (crownState.holderId === targetId) {
+        crownState.holderId = null;
+        crownState.x = 0;
+        crownState.z = 0;
+      }
+      scene.remove(target.mesh);
+      delete players[targetId];
+      updateRankingUI();
+      updateBotCountUI();
+      playSound('boing');
+    }
+
+    // AI CPUをすべて消して0体にする
+    function clearBots() {
+      const botIds = Object.keys(players).filter(id => players[id].isBot);
+      botIds.forEach(id => {
+        if (crownState.holderId === id) {
+          crownState.holderId = null;
+          crownState.x = 0;
+          crownState.z = 0;
+        }
+        scene.remove(players[id].mesh);
+        delete players[id];
+      });
+      updateRankingUI();
+      updateBotCountUI();
+      playSound('boing');
+    }
+
+    function updateBotCountUI() {
+      const count = Object.values(players).filter(p => p.isBot).length;
+      const badge = document.getElementById('bot-count-badge');
+      if (badge) badge.textContent = `${count}体`;
+    }
+
+    // アクション処理
     function doJump(p) {
       if (p.y <= 0.15) {
         p.vy = 0.62;
@@ -733,7 +746,6 @@
       }
     }
 
-    // Bボタン：前方へ飛び込みヘッドスライディング（ダイブ）
     function doDive(p) {
       if (p.diveTimer > 0) return;
       const dirX = Math.abs(p.joyX) + Math.abs(p.joyY) > 0.1 ? p.joyX : Math.sin(p.angle);
@@ -746,14 +758,12 @@
       playSound('dive');
     }
 
-    // Aボタン：ジャイアント・スピン衝撃波
     function doSpinAttack(p) {
       if (p.spinCd > 0) return;
-      p.spinCd = 130; // 約2.2秒クールダウン
+      p.spinCd = 130;
       p.spinAnimTimer = 25;
       playSound('spin');
 
-      // 3D 충격波リングエフェクト
       const ringGeo = new THREE.RingGeometry(0.8, 1.5, 32);
       ringGeo.rotateX(-Math.PI / 2);
       const ringMat = new THREE.MeshBasicMaterial({ color: p.color, transparent: true, opacity: 0.9, side: THREE.DoubleSide });
@@ -772,7 +782,6 @@
         }
       }, 16);
 
-      // 周囲のキャラを弾き飛ばす
       const powerMult = crownState.holderId === p.id ? 1.45 : 1.0;
       Object.values(players).forEach(other => {
         if (other.id === p.id) return;
@@ -790,7 +799,6 @@
       });
     }
 
-    // 20秒ごとのステージギミック
     function triggerArenaEvent() {
       sweeperState.active = !sweeperState.active;
       sweeperBarGroup.visible = sweeperState.active;
@@ -805,7 +813,6 @@
         playSound('ko');
       } else {
         statusEl.textContent = '👑 中央の「王冠」を奪い合え！';
-        // ボーナスのキャンディシャワー
         for (let i = 0; i < 6; i++) spawnCandy();
         banner.textContent = '🍬 キャンディボーナス大量出現！！';
         banner.classList.remove('hidden');
@@ -815,18 +822,16 @@
     }
 
     // ============================================================================
-    // 6. メイン物理ループ（手足パタパタ・押し合い・王冠・スイーパー判定）
+    // 6. メイン物理ループ
     // ============================================================================
     function updateGamePhysics() {
       const pList = Object.values(players);
 
-      // 1. 回転ハンマーバー（スイーパー）の更新
       if (sweeperState.active) {
         sweeperState.angle += sweeperState.speed;
         sweeperBarGroup.rotation.y = sweeperState.angle;
       }
 
-      // 2. 王冠（クラウン）の更新
       crownState.angle += 0.05;
       if (crownState.holderId && players[crownState.holderId]) {
         const holder = players[crownState.holderId];
@@ -838,32 +843,28 @@
         crownMesh.rotation.y = crownState.angle;
       }
 
-      // 3. 各キャラクターの移動とアニメーション
       pList.forEach(p => {
         if (p.spinCd > 0) p.spinCd--;
         if (p.diveTimer > 0) p.diveTimer--;
         if (p.spinAnimTimer > 0) p.spinAnimTimer--;
 
-        // CPUボットのわちゃわちゃAI
+        // AI CPUの判断ロジック
         if (p.isBot) {
           p.botDecisionTimer--;
           if (p.botDecisionTimer <= 0) {
             p.botDecisionTimer = 18 + Math.floor(Math.random() * 25);
             const distCenter = Math.hypot(p.x, p.z);
             if (distCenter > stageRadius * 0.68) {
-              // 落ちそうなら中央へ全力で戻る
               p.joyX = -p.x / distCenter;
               p.joyY = -p.z / distCenter;
               if (Math.random() < 0.5) doDive(p);
             } else if (!crownState.holderId) {
-              // 王冠が空いていれば王冠へ走る
               const dx = crownState.x - p.x;
               const dz = crownState.z - p.z;
               const d = Math.hypot(dx, dz) || 1;
               p.joyX = dx / d;
               p.joyY = dz / d;
             } else {
-              // 近くのプレイヤーに突격して押し合い！
               const others = pList.filter(o => o.id !== p.id);
               if (others.length > 0) {
                 const target = others[Math.floor(Math.random() * others.length)];
@@ -877,11 +878,9 @@
               }
             }
           }
-          // 回転バーが来たらジャンプするAI
           if (sweeperState.active && p.y <= 0.1 && Math.random() < 0.04) doJump(p);
         }
 
-        // 加速度と移動
         const moveAccel = crownState.holderId === p.id ? 0.052 : 0.045;
         p.vx += p.joyX * moveAccel;
         p.vz += p.joyY * moveAccel;
@@ -891,7 +890,6 @@
         p.vx *= 0.87;
         p.vz *= 0.87;
 
-        // ジャンプと重力
         const distFromCenter = Math.hypot(p.x, p.z);
         if (distFromCenter <= stageRadius + 0.7 && p.y >= -0.4) {
           p.y += p.vy;
@@ -902,16 +900,13 @@
             p.vy = 0;
           }
         } else {
-          // ステージ場外へ落下中！
           p.y += p.vy;
           p.vy -= 0.048;
         }
 
-        // 王冠を持っているキャラは1.3倍に巨大化！
         const targetScale = crownState.holderId === p.id ? 1.32 : 1.0;
         p.mesh.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1);
 
-        // 進行方向を向く ＆ 二頭身手足パタパタアニメーション
         const speed = Math.hypot(p.vx, p.vz);
         if (speed > 0.02) {
           p.angle = Math.atan2(p.vx, p.vz);
@@ -922,7 +917,6 @@
 
         const ud = p.mesh.userData;
         if (p.spinAnimTimer > 0) {
-          // 回転アタック中はコマのように高速スピン
           p.mesh.rotation.y += 0.65;
         } else {
           p.mesh.rotation.y = p.angle;
@@ -930,11 +924,9 @@
 
         if (ud && !ud.isCustomGLB && ud.bodyGroup) {
           if (p.diveTimer > 0) {
-            // ダイブ中は水平にヘッドスライディング姿勢！
             ud.bodyGroup.rotation.x = Math.PI / 2.2;
             ud.bodyGroup.position.y = 0.6;
           } else {
-            // 走ると前傾姿勢で手足がパタパタ動く
             ud.bodyGroup.rotation.x = Math.min(0.35, speed * 0.7);
             ud.bodyGroup.position.y = Math.abs(Math.sin(p.walkCycle)) * 0.22;
             const swing = Math.sin(p.walkCycle) * Math.min(0.9, speed * 3.5);
@@ -945,7 +937,6 @@
           }
         }
 
-        // 王冠の拾得判定
         if (!crownState.holderId && p.y >= 0 && Math.hypot(p.x - crownState.x, p.z - crownState.z) < 2.2) {
           crownState.holderId = p.id;
           p.score += 100;
@@ -955,14 +946,11 @@
           updateRankingUI();
         }
 
-        // 回転ハンマーバーとの衝突判定
         if (sweeperState.active && p.y < 1.5 && distFromCenter < stageRadius * 0.92) {
-          // バーの直線との距離を計算
           const barCos = Math.cos(-sweeperState.angle);
           const barSin = Math.sin(-sweeperState.angle);
           const perpDist = Math.abs(p.x * barSin + p.z * barCos);
           if (perpDist < 1.35) {
-            // ハンマーバーに弾き飛ばされる！
             p.vx += -barSin * 1.1;
             p.vz += -barCos * 1.1;
             p.vy = 0.45;
@@ -971,13 +959,12 @@
           }
         }
 
-        // 場外リングアウト（落下KO）判定
         if (p.y < -11) {
           handlePlayerRingOut(p);
         }
       });
 
-      // 4. プレイヤー同士の「ぷにぷに押し合い・弾き飛ばし」衝突判定
+      // 押し合い衝突判定
       for (let i = 0; i < pList.length; i++) {
         for (let j = i + 1; j < pList.length; j++) {
           const a = pList[i];
@@ -994,13 +981,11 @@
             const nz = dz / dist;
             const overlap = minDist - dist;
 
-            // めり込み防止の押し返し
             a.x -= nx * overlap * 0.5;
             a.z -= nz * overlap * 0.5;
             b.x += nx * overlap * 0.5;
             b.z += nz * overlap * 0.5;
 
-            // ダイブ中や王冠所持者は相手を強く吹っ飛ばす！
             const aPower = (a.diveTimer > 0 ? 1.6 : 1.0) * (crownState.holderId === a.id ? 1.4 : 1.0);
             const bPower = (b.diveTimer > 0 ? 1.6 : 1.0) * (crownState.holderId === b.id ? 1.4 : 1.0);
             const bounce = 0.36;
@@ -1017,7 +1002,6 @@
         }
       }
 
-      // 5. キャンディ（得点アイテム）取得判定
       candies.forEach(c => {
         c.phase += 0.07;
         c.mesh.rotation.y += 0.05;
@@ -1035,13 +1019,11 @@
         });
       });
 
-      // 王冠を持っている人には毎フレーム少しボーナスが入る
       if (crownState.holderId && players[crownState.holderId] && Math.random() < 0.08) {
         players[crownState.holderId].score += 2;
         updateRankingUI();
       }
 
-      // 自分のスマホ画面のスコア＆クールダウン表示を更新
       const me = players[myClientId];
       if (me) {
         document.getElementById('ctrl-score-num').textContent = me.score;
@@ -1050,16 +1032,14 @@
       }
     }
 
-    // 場外へ落ちたときの処理（王冠ドロップ＆キルボーナス）
     function handlePlayerRingOut(victim) {
       playSound('ko');
 
-      // もし王冠を持っていたらステージ中央付近にポロッと落とす！
       if (crownState.holderId === victim.id) {
         crownState.holderId = null;
         crownState.x = (Math.random() - 0.5) * 6;
         crownState.z = (Math.random() - 0.5) * 6;
-        spawnDanmaku(`👑 ${victim.name} が転落して王冠を落としたぞ！！チャンス！`, '#facc15');
+        spawnDanmaku(`👑 ${victim.name} が転落して王冠を落としたぞ！！`, '#facc15');
       }
 
       if (victim.lastHitBy && players[victim.lastHitBy] && victim.lastHitBy !== victim.id) {
@@ -1071,7 +1051,6 @@
         showFloatingText(0, 3, 0, `😱 ${victim.name} が場外へドボン！`, '#38bdf8');
       }
 
-      // 上空からステージへリスポーン復帰
       const ang = Math.random() * Math.PI * 2;
       const rad = Math.random() * 6;
       victim.x = Math.cos(ang) * rad;
@@ -1145,17 +1124,16 @@
     }
 
     // ============================================================================
-    // 7. ネットワーク同期（MQTT over WSS でスマホ4G/5Gでも100%同期）
+    // 7. ネットワーク同期
     // ============================================================================
     function initNetworkSync() {
       document.getElementById('room-code-text').textContent = roomCode;
       document.getElementById('manual-room-input').value = roomCode;
 
-      // QRコード生成
       const joinUrl = `${window.location.origin}${window.location.pathname}?room=${roomCode}`;
       const qrBox = document.getElementById('qrcode-box');
       qrBox.innerHTML = '';
-      new QRCode(qrBox, { text: joinUrl, width: 112, height: 112 });
+      new QRCode(qrBox, { text: joinUrl, width: 116, height: 116 });
 
       mqttTopicHost = `ccc-wacha-2026/${roomCode}/host`;
       mqttTopicState = `ccc-wacha-2026/${roomCode}/state`;
@@ -1167,8 +1145,9 @@
         mqttClient.subscribe(mqttTopicHost);
         mqttClient.subscribe(mqttTopicState);
 
-        // 接続完了時にすぐ自分のキャラクターを登録送信
-        sendControllerInput({ type: 'join' });
+        if (roomParam) {
+          sendControllerInput({ type: 'join' });
+        }
       });
 
       mqttClient.on('message', (topic, payload) => {
@@ -1211,7 +1190,6 @@
         jy: Number(joyVec.y.toFixed(2)),
         ...extra
       };
-      // 同一画面テスト用またはホスト自身の操作は即時反映
       handleHostPacket(packet);
 
       if (mqttClient && mqttClient.connected) {
@@ -1242,7 +1220,7 @@
           const line = document.createElement('div');
           line.textContent = `[P2P] ${p.name} (${data.jx},${data.jy}) ${data.action || ''}`;
           logBox.prepend(line);
-          while (logBox.children.length > 5) logBox.lastChild.remove();
+          while (logBox.children.length > 4) logBox.lastChild.remove();
         }
       }
     }
@@ -1297,7 +1275,6 @@
       zone.addEventListener('pointerup', resetKnob);
       zone.addEventListener('pointercancel', resetKnob);
 
-      // 3大アクションボタン
       document.getElementById('btn-jump').addEventListener('pointerdown', e => {
         e.preventDefault();
         sendControllerInput({ action: 'jump' });
@@ -1311,7 +1288,6 @@
         sendControllerInput({ action: 'spin' });
       });
 
-      // PCのキーボードでも操作可能 (WASD / 矢印 / Space:ジャンプ / Shift:ダイブ / Enter:回転)
       const keys = {};
       window.addEventListener('keydown', e => {
         if (document.activeElement.tagName === 'INPUT') return;
@@ -1337,7 +1313,6 @@
         joyVec.y = ky ? ky / l : 0;
       }
 
-      // 80msごとにスティック入力を送信
       setInterval(() => {
         if (Math.abs(joyVec.x) > 0.01 || Math.abs(joyVec.y) > 0.01) {
           sendControllerInput();
@@ -1345,7 +1320,6 @@
       }, 80);
     }
 
-    // 通信モニター描画
     function renderNetworkVisualizer() {
       const cvs = document.getElementById('net-canvas');
       if (!cvs) return;
@@ -1357,7 +1331,7 @@
       list.forEach((p, idx) => {
         const ang = (idx / Math.max(1, list.length)) * Math.PI * 2;
         const nx = cx + Math.cos(ang) * 70;
-        const ny = cy + Math.sin(ang) * 28;
+        const ny = cy + Math.sin(ang) * 24;
         ctx.strokeStyle = 'rgba(255,255,255,0.2)';
         ctx.beginPath(); ctx.moveTo(nx, ny); ctx.lineTo(cx, cy); ctx.stroke();
         ctx.fillStyle = p.color;
@@ -1365,30 +1339,39 @@
       });
 
       ctx.fillStyle = '#facc15';
-      ctx.beginPath(); ctx.arc(cx, cy, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx, cy, 6.5, 0, Math.PI * 2); ctx.fill();
 
       packetVisuals.forEach(v => v.prog += 0.08);
       packetVisuals = packetVisuals.filter(v => v.prog < 1);
     }
 
-    // 画面モード切替
     function switchViewMode(mode) {
       currentMode = mode;
       const hostSec = document.getElementById('host-section');
       const ctrlSec = document.getElementById('controller-section');
+      const btnHost = document.getElementById('btn-mode-host');
+      const btnSplit = document.getElementById('btn-mode-split');
+      const btnCtrl = document.getElementById('btn-mode-ctrl');
+
+      btnHost.className = 'arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-indigo-800 text-indigo-100 font-bold';
+      btnSplit.className = 'arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-indigo-800 text-indigo-100 font-bold';
+      btnCtrl.className = 'arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-indigo-800 text-indigo-100 font-bold';
 
       if (mode === 'host') {
         hostSec.classList.remove('hidden');
         ctrlSec.classList.add('hidden');
+        btnHost.className = 'arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-pink-500 text-white font-black';
       } else if (mode === 'controller') {
         hostSec.classList.add('hidden');
         ctrlSec.classList.remove('hidden');
         ctrlSec.classList.remove('lg:w-[410px]');
         ctrlSec.classList.add('w-full', 'flex-1');
+        btnCtrl.className = 'arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-pink-500 text-white font-black';
       } else {
         hostSec.classList.remove('hidden');
         ctrlSec.classList.remove('hidden', 'w-full', 'flex-1');
         ctrlSec.classList.add('lg:w-[410px]');
+        btnSplit.className = 'arcade-btn text-xs px-2.5 py-1.5 rounded-xl bg-pink-500 text-white font-black';
       }
       setTimeout(() => window.dispatchEvent(new Event('resize')), 60);
     }
@@ -1404,17 +1387,19 @@
       initControllerPad();
       initNetworkSync();
 
-      // 最初からわちゃわちゃするようにプレイヤー自身とCPUボット4体を追加
-      ensurePlayer(myClientId, document.getElementById('ctrl-name-input').value, false);
+      // 初期状態：CPUボット4体を配置
       spawnBot();
       spawnBot();
       spawnBot();
       spawnBot();
 
-      if (roomParam) switchViewMode('controller');
-      else switchViewMode('split');
+      if (roomParam) {
+        switchViewMode('controller');
+      } else {
+        // 展示PCで開いた時は最初から展示大画面で起動
+        switchViewMode('host');
+      }
 
-      // 1秒ごとのタイマー＆スコア配信
       setInterval(() => {
         ppsValue = packetsCount;
         packetsCount = 0;
