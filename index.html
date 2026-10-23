@@ -20,16 +20,16 @@
     /* 一番上の文字と、画像リスト全体の枠（最大幅を揃える） */
     .container {
       width: 100%;
-      max-width: 800px; /* PCで見た時にデカすぎないように最大幅を設定（スマホでは画面幅いっぱいになります） */
+      max-width: 800px;
       display: flex;
       flex-direction: column;
-      gap: 24px; /* 文字や画像どうしの縦の隙間 */
+      gap: 24px;
     }
 
     /* 一番上の文字のデザイン */
     .header-text {
-      text-align: center; /* 中央揃え（左揃えが良ければ left に変更） */
-      font-size: 20px;    /* 文字の大きさ */
+      text-align: center;
+      font-size: 20px;
       font-weight: bold;
       margin: 8px 0;
       line-height: 1.5;
@@ -40,13 +40,13 @@
       width: 100%;
       display: flex;
       flex-direction: column;
-      gap: 24px; /* 画像・動画どうしの縦の隙間 */
+      gap: 24px;
     }
 
     /* 画像と動画の横幅を100%に強制してピシッと揃える */
     img, video {
       width: 100%;
-      height: auto; /* 縦横比は崩さない */
+      height: auto;
       border-radius: 4px;
       display: block;
     }
@@ -55,7 +55,6 @@
 <body>
 
   <div class="container">
-    
     <div class="header-text">
       3C
     </div>
@@ -64,11 +63,9 @@
   </div>
 
   <script>
-
     const username = 'Lingmud33';
     const repo = 'lsistsCCC';
-    const folder = 'media'; 
-
+    const folder = 'media';
 
     async function loadMedia() {
       const gallery = document.getElementById('gallery');
@@ -76,6 +73,9 @@
       
       try {
         const response = await fetch(apiUrl);
+        if (!response.ok) {
+          throw new Error('フォルダが見つかりません');
+        }
         const files = await response.json();
         gallery.innerHTML = '';
 
@@ -83,16 +83,18 @@
 
         files.forEach(file => {
           const ext = file.name.split('.').pop().toLowerCase();
+          // 日本語やスペース入りのファイル名でも文字化けしないように変換
+          const fileUrl = encodeURI(file.path);
           
           if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
             const img = document.createElement('img');
-            img.src = file.path;
+            img.src = fileUrl;
             img.loading = 'lazy';
             gallery.appendChild(img);
           } 
           else if (['mp4', 'webm', 'mov'].includes(ext)) {
             const video = document.createElement('video');
-            video.src = file.path + '#t=0.001'; // 動画対策済み
+            video.src = fileUrl + '#t=0.001';
             video.controls = true;
             video.playsInline = true;
             video.preload = 'metadata';
