@@ -3,38 +3,72 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- 検索よけ -->
   <meta name="robots" content="noindex,nofollow">
   <title>Gallery</title>
   <style>
     body {
       margin: 0;
-      padding: 16px;
-      background-color: #000; 
-      color: #fff;
+      padding: 24px 16px;
+      background-color: #000; /* 背景色（黒） */
+      color: #fff;            /* 文字色（白） */
+      font-family: sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 24px; /* 画像・動画どうしの隙間 */
     }
+
+    /* 一番上の文字と、画像リスト全体の枠（最大幅を揃える） */
+    .container {
+      width: 100%;
+      max-width: 800px; /* PCで見た時にデカすぎないように最大幅を設定（スマホでは画面幅いっぱいになります） */
+      display: flex;
+      flex-direction: column;
+      gap: 24px; /* 文字や画像どうしの縦の隙間 */
+    }
+
+    /* 一番上の文字のデザイン */
+    .header-text {
+      text-align: center; /* 中央揃え（左揃えが良ければ left に変更） */
+      font-size: 20px;    /* 文字の大きさ */
+      font-weight: bold;
+      margin: 8px 0;
+      line-height: 1.5;
+    }
+
+    /* ギャラリー部分 */
+    #gallery {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 24px; /* 画像・動画どうしの縦の隙間 */
+    }
+
+    /* 画像と動画の横幅を100%に強制してピシッと揃える */
     img, video {
-      max-width: 100%;
-      height: auto;
-      max-height: 90vh; /* 縦長すぎる画像が画面からはみ出ないようにする */
-      border-radius: 4px; /* 角を少し丸くする */
+      width: 100%;
+      height: auto; /* 縦横比は崩さない */
+      border-radius: 4px;
       display: block;
     }
   </style>
 </head>
 <body>
 
-  <div id="gallery">読み込み中...</div>
+  <div class="container">
+    
+    <div class="header-text">
+      3C
+    </div>
+
+    <div id="gallery">読み込み中...</div>
+  </div>
 
   <script>
 
     const username = 'Lingmud33';
-    const repo = 'lsistsCCC';
-    const folder = 'media';
+    const repo = 'lsistCCC';
+    const folder = 'media'; 
+
 
     async function loadMedia() {
       const gallery = document.getElementById('gallery');
@@ -43,40 +77,30 @@
       try {
         const response = await fetch(apiUrl);
         const files = await response.json();
-        gallery.innerHTML = ''; // 「読み込み中...」を消す
+        gallery.innerHTML = '';
 
-        // ファイル名順（01.jpg, 02.mp4...など）に並べる
         files.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true}));
 
         files.forEach(file => {
-          // 拡張子を取り出す
           const ext = file.name.split('.').pop().toLowerCase();
           
-          // 画像ファイルの場合
           if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
             const img = document.createElement('img');
-            img.src = file.download_url;
-            img.loading = 'lazy'; // スクロールして近づいたら読み込む（重くならない工夫）
+            img.src = file.path;
+            img.loading = 'lazy';
             gallery.appendChild(img);
           } 
-          // 動画ファイルの場合
           else if (['mp4', 'webm', 'mov'].includes(ext)) {
             const video = document.createElement('video');
-            video.src = file.download_url;
-            video.controls = true;    // 再生ボタンやシークバーを表示
-            video.playsInline = true; // スマホで勝手に全画面になるのを防ぐ
+            video.src = file.path + '#t=0.001'; // 動画対策済み
+            video.controls = true;
+            video.playsInline = true;
             video.preload = 'metadata';
-            
-            // ※もし動画も「音無しで自動ループ再生」にしたい場合は、下の3行の「//」を消してください
-            // video.autoplay = true;
-            // video.muted = true;
-            // video.loop = true;
-
             gallery.appendChild(video);
           }
         });
       } catch (error) {
-        gallery.innerHTML = 'データの読み込みに失敗しました。IDやリポジトリ名が合っているか確認してください。';
+        gallery.innerHTML = 'データの読み込みに失敗しました。';
       }
     }
 
