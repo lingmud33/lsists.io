@@ -1,112 +1,92 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="robots" content="noindex,nofollow">
-  <title>3C_Gallery</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 24px 16px;
-      background-color: #000; /* 背景色（黒） */
-      color: #fff;            /* 文字色（白） */
-      font-family: sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    /* 一番上の文字と、画像リスト全体の枠（最大幅を揃える） */
-    .container {
-      width: 100%;
-      max-width: 800px;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
-
-    /* 一番上の文字のデザイン */
-    .header-text {
-      text-align: center;
-      font-size: 20px;
-      font-weight: bold;
-      margin: 8px 0;
-      line-height: 1.5;
-    }
-
-    /* ギャラリー部分 */
-    #gallery {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
-
-    /* 画像と動画の横幅を100%に強制してピシッと揃える */
-    img, video {
-      width: 100%;
-      height: auto;
-      border-radius: 4px;
-      display: block;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>3C_Gallery</title>
+<style>
+body {
+margin: 0;
+padding: 24px 16px;
+background-color: #000;
+color: #fff;
+font-family: sans-serif;
+display: flex;
+flex-direction: column;
+align-items: center;
+}
+.container {
+width: 100%;
+max-width: 800px;
+display: flex;
+flex-direction: column;
+gap: 24px;
+}
+.header-text {
+text-align: center;
+font-size: 20px;
+font-weight: bold;
+margin: 8px 0;
+line-height: 1.5;
+}
+#gallery {
+width: 100%;
+display: flex;
+flex-direction: column;
+gap: 24px;
+}
+img, video {
+width: 100%;
+height: auto;
+border-radius: 4px;
+display: block;
+}
+</style>
 </head>
 <body>
+<div class="container">
+<div class="header-text">3C</div>
+<div id="gallery">読み込み中...</div>
+</div>
+<script>
+const username = 'Lingmud33';
+const repo = 'lsistsCCC';
+const folder = 'media';
 
-  <div class="container">
-    <div class="header-text">
-      3C
-    </div>
-
-    <div id="gallery">読み込み中...</div>
-  </div>
-
-  <script>
-    const username = 'Lingmud33';
-    const repo = 'lsistsCCC';
-    const folder = 'media';
-
-    async function loadMedia() {
-      const gallery = document.getElementById('gallery');
-      const apiUrl = `https://api.github.com/repos/${username}/${repo}/contents/${folder}`;
-      
-      try {
-        const response = await fetch(apiUrl);
-        if (!response.ok) {
-          throw new Error('フォルダが見つかりません');
-        }
-        const files = await response.json();
-        gallery.innerHTML = '';
-
-        files.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true}));
-
-        files.forEach(file => {
-          const ext = file.name.split('.').pop().toLowerCase();
-          // 日本語やスペース入りのファイル名でも文字化けしないように変換
-          const fileUrl = encodeURI(file.path);
-          
-          if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
-            const img = document.createElement('img');
-            img.src = fileUrl;
-            img.loading = 'lazy';
-            gallery.appendChild(img);
-          } 
-          else if (['mp4', 'webm', 'mov'].includes(ext)) {
-            const video = document.createElement('video');
-            video.src = fileUrl + '#t=0.001';
-            video.controls = true;
-            video.playsInline = true;
-            video.preload = 'metadata';
-            gallery.appendChild(video);
-          }
-        });
-      } catch (error) {
-        gallery.innerHTML = 'データの読み込みに失敗しました。';
-      }
-    }
-
-    loadMedia();
-  </script>
+async function loadMedia() {
+const gallery = document.getElementById('gallery');
+const apiUrl = `https://api.github.com/repos/${username}/${repo}/contents/${folder}`;
+try {
+const response = await fetch(apiUrl);
+if (!response.ok) {
+throw new Error('HTTPステータス: ' + response.status);
+}
+const files = await response.json();
+gallery.innerHTML = '';
+files.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true}));
+files.forEach(file => {
+const ext = file.name.split('.').pop().toLowerCase();
+const fileUrl = encodeURI(file.path);
+if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+const img = document.createElement('img');
+img.src = fileUrl;
+img.loading = 'lazy';
+gallery.appendChild(img);
+} else if (['mp4', 'webm', 'mov'].includes(ext)) {
+const video = document.createElement('video');
+video.src = fileUrl + '#t=0.001';
+video.controls = true;
+video.playsInline = true;
+video.preload = 'metadata';
+gallery.appendChild(video);
+}
+});
+} catch (error) {
+gallery.innerHTML = 'エラー詳細: ' + error.message;
+}
+}
+loadMedia();
+</script>
 </body>
 </html>
